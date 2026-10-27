@@ -1,0 +1,9 @@
+node_modules/
+.env
+.env.*
+!.env.example
+*.keystore
+*.jks
+*.p12
+*.mobileprovision
+mobile/www/

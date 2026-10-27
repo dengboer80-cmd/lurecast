@@ -1,0 +1,19 @@
+{
+  "name": "lurecast-mobile",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "sync": "npm run prepare:web && cap sync",
+    "android": "cap open android",
+    "ios": "cap open ios",
+    "prepare:web": "node scripts/prepare.mjs"
+  },
+  "dependencies": {
+    "@capacitor/core": "^8.0.0",
+    "@capacitor/android": "^8.0.0",
+    "@capacitor/ios": "^8.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^8.0.0"
+  }
+}
