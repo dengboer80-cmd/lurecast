@@ -3,6 +3,8 @@ let waterMap = null,
   mapVisible = false,
   mapView = null,
   waterResults = [],
+  waterBaseLayer = null,
+  waterBaseKind = "street",
   waterBusy = false,
   lastWaterRequest = 0;
 let selectedWaterLocation = null;
@@ -20,7 +22,7 @@ renderSpots = function () {
   document.querySelector("#spots .card.cardpad")?.remove();
   const panel = document.createElement("section");
   panel.className = "card cardpad";
-  panel.innerHTML = `<h2>河流、湖泊与我的钓点</h2><p class="sub">OpenStreetMap 地图与公共河湖数据。河湖中心点不是可垂钓许可；请核对禁渔规定、岸线通行和水情。地图和搜索需联网，会向地图服务发送查询区域。</p><form id="waterSearchForm"><label>搜索河流 / 湖泊<input id="waterQuery" placeholder="如：钱塘江、西湖或所在城市" maxlength="100" required></label><button class="pill">搜索地图水域</button></form><div class="maptools"><button class="pill" onclick="openWaterMap()">打开地图</button><button class="pill" onclick="locateWaterMap()">定位到我</button><button class="pill" onclick="discoverWaters()">查找当前区域河湖</button></div><p id="waterStatus" role="status" class="sub">尚未加载在线地图。离线仍可查看下面已保存的钓点。</p><div id="waterMap" aria-label="河流湖泊地图" style="height:360px;display:none"></div><p class="sub">点击地图可填写钓点坐标，再在下方确认名称后保存。GPS和地图使用 WGS84 坐标。</p><div id="waterResults"></div>`;
+  panel.innerHTML = `<h2>河流、湖泊与我的钓点</h2><p class="sub">OpenStreetMap 地图与公共河湖数据。河湖中心点不是可垂钓许可；请核对禁渔规定、岸线通行和水情。地图和搜索需联网，会向地图服务发送查询区域。</p><form id="waterSearchForm"><label>搜索河流 / 湖泊<input id="waterQuery" placeholder="如：钱塘江、西湖或所在城市" maxlength="100" required></label><button class="pill">搜索地图水域</button></form><div class="maptools"><button class="pill" onclick="openWaterMap()">打开地图</button><button class="pill" onclick="mapLayerFree('street')">标准地图</button><button class="pill" onclick="mapLayerFree('topo')">免费地形图</button><button class="pill" onclick="locateWaterMap()">定位到我</button><button class="pill" onclick="discoverWaters()">查找当前区域河湖</button></div><p id="waterStatus" role="status" class="sub">尚未加载在线地图。离线仍可查看下面已保存的钓点。</p><div id="waterMap" aria-label="河流湖泊地图" style="height:360px;display:none"></div><p class="sub">点击地图可填写钓点坐标，再在下方确认名称后保存。GPS和地图使用 WGS84 坐标。</p><div id="waterResults"></div>`;
   document
     .getElementById("spots")
     .insertBefore(panel, document.getElementById("spots").children[1]);
@@ -86,15 +88,7 @@ function openWaterMap() {
       : [locs[locationIndex][2], locs[locationIndex][3]],
     mapView?.zoom || 11,
   );
-  L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
-    maxZoom: 19,
-    attribution:
-      '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
-  })
-    .addTo(waterMap)
-    .on("tileerror", () =>
-      waterStatus("底图暂不可用；可以搜索水域或手动填写坐标，不显示虚构地图"),
-    );
+  mapLayerFree(waterBaseKind);
   waterMarkers = L.layerGroup().addTo(waterMap);
   userPoints.forEach(markWaterPoint);
   waterMap.on("click", (e) => {
@@ -326,6 +320,7 @@ function selectWaterWeather(p) {
     name: p.name,
     lat: Number(p.lat),
     lng: Number(p.lng),
+    type: p.type,
   };
   document.getElementById("placename").textContent = p.name;
   switchPage("weather");
@@ -360,3 +355,31 @@ addPlan = function () {
   )
     toast("计划已保存");
 };
+
+function mapLayerFree(kind) {
+  if (!waterMap) {
+    waterBaseKind = kind;
+    openWaterMap();
+    return;
+  }
+  if (waterBaseLayer) waterBaseLayer.remove();
+  waterBaseKind = kind;
+  const topo = kind === "topo";
+  waterBaseLayer = L.tileLayer(
+    topo
+      ? "https://a.tile.opentopomap.org/{z}/{x}/{y}.png"
+      : "https://tile.openstreetmap.org/{z}/{x}/{y}.png",
+    {
+      maxZoom: topo ? 17 : 19,
+      attribution: topo
+        ? 'Map data &copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, SRTM | Map style &copy; <a href="https://opentopomap.org/about" target="_blank" rel="noopener">OpenTopoMap (CC-BY-SA)</a>'
+        : '&copy; <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
+    },
+  ).addTo(waterMap);
+  waterBaseLayer.once("tileerror", () => {
+    if (topo) {
+      mapLayerFree("street");
+      waterStatus("地形图服务暂不可用，已切回标准地图。");
+    } else waterStatus("底图暂不可用；仍可搜索水域或手动记录坐标。");
+  });
+}

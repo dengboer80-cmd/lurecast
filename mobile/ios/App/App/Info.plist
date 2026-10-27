@@ -24,10 +24,6 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>UIUserInterfaceStyle</key>
 	<string>Dark</string>
-	<key>NSCameraUsageDescription</key>
-	<string>仅在你选择拍照时，用于拍摄并记录本机鱼获照片。</string>
-	<key>NSPhotoLibraryUsageDescription</key>
-	<string>仅在你选择照片时，用于将鱼获照片保存到本机记录。</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>仅在你点击定位时，用于填写并保存自己找到的钓点坐标。</string>
 	<key>LSRequiresIPhoneOS</key>

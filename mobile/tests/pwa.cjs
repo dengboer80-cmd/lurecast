@@ -55,10 +55,39 @@ const { once } = require("node:events");
     const errors = [],
       external = [];
     const base = `http://127.0.0.1:${server.address().port}/lurecast/`;
-    page.on("pageerror", (e) => errors.push(e.message));
-    context.on("request", (r) => {
-      if (!r.url().startsWith(base)) external.push(r.url());
+    page.on("pageerror", (e) => {
+      errors.push(e.message);
+      console.error("Browser error:", e.message);
     });
+    context.on("request", (r) => {
+      if (
+        !r.url().startsWith(base) &&
+        !["api.open-meteo.com", "marine-api.open-meteo.com"].includes(
+          new URL(r.url()).hostname,
+        )
+      )
+        external.push(r.url());
+    });
+    await page.route("https://api.open-meteo.com/**", (r) =>
+      r.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: true,
+          reason: "test-only service unavailable",
+        }),
+      }),
+    );
+    await page.route("https://marine-api.open-meteo.com/**", (r) =>
+      r.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: true,
+          reason: "test-only service unavailable",
+        }),
+      }),
+    );
     await page.goto(base);
     await page.evaluate(() => navigator.serviceWorker.ready);
     await page.waitForFunction(() => navigator.serviceWorker.controller);
@@ -79,6 +108,9 @@ const { once } = require("node:events");
     await context.setOffline(true);
     await page.reload();
     await page.waitForSelector("#dates .day");
+    await page.waitForFunction(
+      () => weatherState !== "loading" && marineState !== "loading",
+    );
     await page.evaluate(() => switchPage("profile"));
     assert.equal(
       await page.locator("[name=note]").inputValue(),
@@ -87,13 +119,13 @@ const { once } = require("node:events");
     for (const target of ["home", "weather", "fish", "spots"])
       await page.evaluate((p) => switchPage(p), target);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fish svg[role=img]").count(), 2);
+    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
     await page.evaluate(() => switchPage("home"));
     assert.match(await page.locator("#tidecontent").innerText(), /不可用/);
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(
-      "PASS: subpath deployment, install metadata, service-worker control, offline reload, offline plan persistence, navigation, fish artwork, unavailable forecasts, zero external requests. Safari installation remains UNRUN.",
+      "PASS: subpath deployment, install metadata, service-worker control, offline reload, offline plan persistence, navigation, fish artwork, unavailable forecasts, zero unexpected external requests. Safari installation remains UNRUN.",
     );
   } finally {
     if (browser) await browser.close();

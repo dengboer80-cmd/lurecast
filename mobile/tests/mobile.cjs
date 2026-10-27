@@ -34,7 +34,9 @@ const fs = require("node:fs");
         fs.readFileSync(require("node:path").join(__dirname, "../www", name)),
       );
     })
-    .listen(8173, "127.0.0.1");
+    .listen(0, "127.0.0.1");
+  await new Promise((resolve) => server.once("listening", resolve));
+  const testBase = "http://127.0.0.1:" + server.address().port;
   let browser;
   try {
     browser = await chromium.launch({
@@ -47,16 +49,48 @@ const fs = require("node:fs");
       }),
       errors = [],
       external = [];
-    page.on("pageerror", (e) => errors.push(e.message));
-    page.on("request", (r) => {
-      if (!r.url().startsWith("http://127.0.0.1")) external.push(r.url());
+    page.on("pageerror", (e) => {
+      errors.push(e.message);
+      console.error("Browser error:", e.message);
     });
-    await page.goto("http://127.0.0.1:8173");
+    page.on("request", (r) => {
+      if (
+        !r.url().startsWith("http://127.0.0.1") &&
+        !["api.open-meteo.com", "marine-api.open-meteo.com"].includes(
+          new URL(r.url()).hostname,
+        )
+      )
+        external.push(r.url());
+    });
+    await page.route("https://api.open-meteo.com/**", (r) =>
+      r.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: true,
+          reason: "test-only service unavailable",
+        }),
+      }),
+    );
+    await page.route("https://marine-api.open-meteo.com/**", (r) =>
+      r.fulfill({
+        status: 503,
+        contentType: "application/json",
+        body: JSON.stringify({
+          error: true,
+          reason: "test-only service unavailable",
+        }),
+      }),
+    );
+    await page.goto(testBase);
     await page.waitForSelector("#dates .day");
+    await page.waitForFunction(
+      () => weatherState !== "loading" && marineState !== "loading",
+    );
     assert.equal(await page.locator("#dates .day").count(), 10);
     assert.match(await page.locator("#tidecontent").innerText(), /不可用/);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fish svg[role=img]").count(), 2);
+    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
     await page.evaluate(() => switchPage("spots"));
     await page.locator("#spots .star").first().click();
     await page.locator("[name=name]").fill("<钓点测试>");
@@ -151,7 +185,7 @@ const fs = require("node:fs");
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(
-      "PASS: 10 dates, unavailable services, two fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
+      "PASS: 10 dates, unavailable services, all fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero unexpected external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
     );
   } finally {
     if (browser) await browser.close();

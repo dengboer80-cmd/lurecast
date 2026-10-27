@@ -59,3 +59,7 @@ Android 需配置 Android Studio / SDK / JDK；iOS 需 macOS / Xcode。当前环
 ## 杭州、10天天气、鱼获与河湖
 
 新增常见路亚鱼种库、自定义鱼种、公斤重量与本机照片鱼获记录、OpenStreetMap河湖搜索和自建钓点。天气改为10天，准备Apple WeatherKit的独立服务端接入，未配置时不可用。详见 [FEATURES.md](FEATURES.md)，其中明确区分真实外部服务、测试响应和未完成授权。
+
+## 当前版本：免费数据与全鱼种插画
+
+默认改为Open-Meteo免费非商业10天天气与海洋模型参考，无需Apple账号/Key；杭州缺失潮位不补算。鱼获模块已从界面移除，鱼种库每项配2D示意插画。地图增加OpenTopoMap地形图。当前数据源、免费限制与真实核验以 [FREE-SOURCES.md](FREE-SOURCES.md) 为准，先前Apple天气/鱼获说明为历史版本。

@@ -1,5 +1,6 @@
-import { mkdir, readFile, writeFile, cp } from "node:fs/promises";
+import { mkdir, readFile, writeFile, cp, rm } from "node:fs/promises";
 await mkdir("www", { recursive: true });
+await rm("www/journal.js", { force: true });
 let html = await readFile("../dist/index.html", "utf8");
 html = html.replace(
   "width=device-width,initial-scale=1",
@@ -36,7 +37,7 @@ js += `\nrenderRecommend=function(){document.getElementById('recommend').innerHT
 renderWeather=function(){document.getElementById('weather').innerHTML='<h1>未来15天天气</h1><div class="card cardpad"><p class="viewdesc">国内天气服务待配置，当前不提供预报数据。</p></div>'};
 renderTide=function(){document.getElementById('tidecontent').innerHTML='<div class="empty">国内潮汐服务待接入。<br>完整15天潮表尚未获得授权数据源。</div>'};
 renderHours=function(){document.getElementById('hours').innerHTML='<div class="empty">国内逐小时天气服务待接入。</div>'};
-document.querySelectorAll('#helpModal .help').forEach(e=>e.textContent='Apple WeatherKit需授权与独立后端，未接通时不提供预报；潮汐与账号尚未配置。地图按需连接OpenStreetMap，河湖不代表可垂钓许可。鱼获和照片仅保存在本机。');
+document.querySelectorAll('#helpModal .help').forEach(e=>e.textContent='天气使用免费非商业Open-Meteo接口；海平面模型包含潮汐影响，但不是当地潮位站潮表。地图按需联网，河湖不代表可垂钓许可。鱼获模块已移除，收藏和计划仍保存在本机。');
 \n`;
 html = html.replace("renderNav();renderHome();", "renderNav();");
 html = html.replace(
@@ -45,7 +46,7 @@ html = html.replace(
 );
 html = html.replace(
   "</body>",
-  '<script src="app.js"></script><script src="fish-data.js"></script><script src="journal.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="weather.js"></script></body>',
+  '<script src="app.js"></script><script src="fish-data.js"></script><script src="fish-art.js"></script><script src="fish-library.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="free-data.js"></script><script src="weather.js"></script></body>',
 );
 html = html.replace(
   "</head>",
@@ -55,8 +56,10 @@ js = js.replace("loadForecast();", "").replace(/renderHome\(\);\s*$/, "");
 for (const name of [
   "app.js",
   "fish-data.js",
-  "journal.js",
+  "fish-art.js",
+  "fish-library.js",
   "map.js",
+  "free-data.js",
   "weather.js",
 ])
   await writeFile("www/" + name, await readFile("scripts/" + name, "utf8"));
@@ -69,7 +72,7 @@ await cp("node_modules/leaflet/dist/images", "www/vendor/leaflet/images", {
 });
 html = html.replace(
   "</head>",
-  '<link rel="stylesheet" href="./vendor/leaflet/leaflet.css"><style>.fishlibrary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;max-height:520px;overflow:auto;margin:18px 0}.catchphotos{display:flex;gap:12px;flex-wrap:wrap}.catchphotos img{width:140px;height:140px;object-fit:cover;border-radius:8px}.catchentry{margin:14px 0}.maptools{display:flex;flex-wrap:wrap;gap:8px}.waterresult{padding:14px 0;border-bottom:1px solid #333}.appleattribution{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0}.appleattribution img{height:24px;max-width:140px}#waterMap{isolation:isolate;z-index:0}.leaflet-control a{color:#111}input,select,textarea{max-width:100%}#fish>label{display:block;margin:12px 0}#fish>label input,#fish>label select{background:#000;color:#fff;border:1px solid #555;padding:12px;width:100%}input[type=checkbox]{width:auto;display:inline-block}.metricvalue{white-space:normal;font-size:22px}details summary{cursor:pointer;min-height:44px}</style></head>',
+  '<link rel="stylesheet" href="./vendor/leaflet/leaflet.css"><style>.fishlibrary{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:18px 0}.speciesart,.speciescard>svg{width:100%;height:160px}.speciescard h3{margin:8px 0}.speciescard .sub{line-height:1.7}.catchphotos{display:flex;gap:12px;flex-wrap:wrap}.catchphotos img{width:140px;height:140px;object-fit:cover;border-radius:8px}.catchentry{margin:14px 0}.maptools{display:flex;flex-wrap:wrap;gap:8px}.waterresult{padding:14px 0;border-bottom:1px solid #333}.appleattribution{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0}.appleattribution img{height:24px;max-width:140px}#waterMap{isolation:isolate;z-index:0}.leaflet-control a{color:#111}input,select,textarea{max-width:100%}#fish>label{display:block;margin:12px 0}#fish>label input,#fish>label select{background:#000;color:#fff;border:1px solid #555;padding:12px;width:100%}input[type=checkbox]{width:auto;display:inline-block}.metricvalue{white-space:normal;font-size:22px}details summary{cursor:pointer;min-height:44px}</style></head>',
 );
 await writeFile("www/index.html", html);
 await writeFile("www/upgrade.js", js);

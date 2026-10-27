@@ -1,6 +1,8 @@
 name: Publish LureCast home-screen web app
 # User approved a public link. Pages is not a five-person access gate.
 on:
+  schedule:
+    - cron: "17 */3 * * *"
   workflow_dispatch:
   push:
     branches: [main]
@@ -38,6 +40,9 @@ jobs:
         working-directory: mobile
         continue-on-error: true
         run: node scripts/check-map-services.mjs
+      - name: Refresh real free data cache (no fabricated fallback)
+        working-directory: mobile
+        run: node scripts/refresh-free-cache.mjs && npm run build:pwa
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

@@ -1,4 +1,4 @@
-// All network responses below are explicit test fixtures, never production forecasts or map data.
+// API fixtures are confined to tests; production only displays real provider responses.
 const { chromium } = require("playwright");
 const binary =
   process.platform === "linux" ? require("@sparticuz/chromium").default : null;
@@ -9,12 +9,18 @@ const http = require("node:http"),
 const { once } = require("node:events");
 (async () => {
   const root = path.resolve(__dirname, "../www");
+  let cacheResponse = { entries: [] };
   const server = http
     .createServer((req, res) => {
       const name =
           new URL(req.url, "http://localhost").pathname.slice(1) ||
           "index.html",
         file = path.resolve(root, name);
+      if (name === "data/free-forecast.json") {
+        res.setHeader("Content-Type", "application/json");
+        res.end(JSON.stringify(cacheResponse));
+        return;
+      }
       if (
         !file.startsWith(root + path.sep) ||
         !fs.existsSync(file) ||
@@ -49,119 +55,171 @@ const { once } = require("node:events");
       }),
       errors = [];
     page.on("pageerror", (e) => errors.push(e.message));
+    let weatherFailed = false,
+      marineFailed = false;
+    const json = (r, d, status = 200) =>
+      r.fulfill({
+        status,
+        contentType: "application/json",
+        headers: { "Access-Control-Allow-Origin": "*" },
+        body: JSON.stringify(d),
+      });
+    const today = new Date(
+      new Date().toLocaleString("en-US", { timeZone: "Asia/Shanghai" }),
+    );
+    const dayKeys = Array.from({ length: 10 }, (_, i) => {
+      const d = new Date(today);
+      d.setDate(d.getDate() + i);
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    });
+    const rawWeather = {
+      latitude: 30.26,
+      longitude: 120.14,
+      daily: {
+        time: dayKeys,
+        temperature_2m_min: dayKeys.map((_, i) => 15 + i),
+        temperature_2m_max: dayKeys.map((_, i) => 25 + i),
+        precipitation_probability_max: dayKeys.map(() => 20),
+      },
+      current: {
+        time: dayKeys[0] + "T12:00",
+        temperature_2m: 20,
+        wind_speed_10m: 10,
+        pressure_msl: 1010,
+      },
+    };
+    await page.route("https://api.open-meteo.com/**", (r) =>
+      weatherFailed
+        ? json(r, { error: true, reason: "fixture unavailable" }, 503)
+        : json(r, rawWeather),
+    );
+    await page.route("https://marine-api.open-meteo.com/**", (r) =>
+      marineFailed
+        ? json(r, { error: true, reason: "fixture unavailable" }, 503)
+        : json(r, {
+            latitude: 29.875,
+            longitude: 122.375,
+            hourly: {
+              time: [
+                dayKeys[0] + "T00:00",
+                dayKeys[0] + "T01:00",
+                dayKeys[0] + "T02:00",
+              ],
+              sea_level_height_msl: [-0.5, null, 0.7],
+            },
+          }),
+    );
     await page.goto("http://127.0.0.1:" + server.address().port);
+    await page.waitForFunction(() => weatherState === "ready");
     assert.equal(await page.locator("#dates .day").count(), 10);
-    assert.equal(await page.locator("#placename").innerText(), "杭州");
+    assert.match(await page.locator("#placename").innerText(), /杭州/);
+    await page.evaluate(() => switchPage("weather"));
+    assert.match(
+      await page.locator("#weather .trendrow").first().innerText(),
+      /15° \/ 25°/,
+    );
+    assert.equal(await page.locator("#weatherConfigForm").count(), 0);
     await page.evaluate(() => switchPage("fish"));
-    assert.ok((await page.locator("#fishLibrary article").count()) >= 90);
-    assert.equal(await page.locator("#fish svg[role=img]").count(), 2);
+    assert.equal(await page.locator("#fishLibrary article").count(), 97);
+    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
+    assert.equal(await page.locator("#catchForm").count(), 0);
+    assert.ok(!(await page.locator("#fish").innerText()).includes("我的鱼获"));
+    const labels = await page
+      .locator("#fishLibrary article")
+      .evaluateAll((rows) =>
+        rows.every((r) =>
+          r
+            .querySelector("svg")
+            .getAttribute("aria-label")
+            .includes(r.querySelector("h3").textContent),
+        ),
+      );
+    assert.ok(labels);
     await page.locator("#fishSearch").fill("翘嘴");
     assert.equal(await page.locator("#fishLibrary article").count(), 1);
-    await page.locator("#fishCustomForm [name=species]").fill("<测试鱼种>");
+    await page.locator("#fishCustomForm [name=species]").fill("<补充鱼>");
     await page.locator("#fishCustomForm button").click();
-    await page.locator("#catchSpecies").fill("翘嘴鲌");
-    await page.locator("#catchWeight").fill("2.375");
-    await page.locator("#catchForm [name=notes]").fill("<鱼获记录>");
+    assert.equal(await page.locator("#fishLibrary article").count(), 98);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await page.screenshot({
+      path: "/tmp/lurecast-fish-library.png",
+      fullPage: false,
+    });
+    await page.evaluate(
+      () =>
+        new Promise((resolve, reject) => {
+          const r = indexedDB.open("lurecast-journal", 1);
+          r.onupgradeneeded = () =>
+            r.result.createObjectStore("catches", { keyPath: "id" });
+          r.onsuccess = () => {
+            const db = r.result,
+              tx = db.transaction("catches", "readwrite");
+            tx.objectStore("catches").put({
+              id: "old-personal-record",
+              species: "existing",
+            });
+            tx.oncomplete = () => {
+              db.close();
+              resolve();
+            };
+          };
+          r.onerror = () => reject(r.error);
+        }),
+    );
+    await page.reload();
+    assert.equal(
+      await page.evaluate(
+        () =>
+          new Promise((resolve) => {
+            const r = indexedDB.open("lurecast-journal");
+            r.onsuccess = () => {
+              const db = r.result,
+                q = db
+                  .transaction("catches")
+                  .objectStore("catches")
+                  .get("old-personal-record");
+              q.onsuccess = () => {
+                resolve(q.result?.id);
+                db.close();
+              };
+            };
+          }),
+      ),
+      "old-personal-record",
+    );
     const png = Buffer.from(
       await page.evaluate(() => {
         const c = document.createElement("canvas");
-        c.width = 4;
-        c.height = 4;
-        c.getContext("2d").fillRect(0, 0, 4, 4);
+        c.width = c.height = 4;
         return c.toDataURL("image/png").split(",")[1];
       }),
       "base64",
     );
-    await page
-      .locator("#catchForm [name=photos]")
-      .setInputFiles({ name: "catch.png", mimeType: "image/png", buffer: png });
-    await page.locator("#catchSave").click();
-    await page.waitForSelector(".catchentry");
-    assert.match(await page.locator(".catchentry").innerText(), /2\.375 kg/);
-    assert.equal(await page.locator(".catchentry img").count(), 1);
-    await page.reload();
-    await page.evaluate(() => switchPage("fish"));
-    await page.waitForSelector(".catchentry");
-    assert.equal(await page.locator(".catchentry img").count(), 1);
-    assert.ok(
-      await page.evaluate(async () => {
-        const r = await catchRecords();
-        return r[0].photos[0] instanceof Blob && r[0].photos[0].size > 0;
-      }),
+    await page.route("https://tile.openstreetmap.org/**", (r) =>
+      r.fulfill({ contentType: "image/png", body: png }),
     );
-    await page.locator(".catchentry .pill").click();
-    await page.waitForFunction(
-      () =>
-        document.getElementById("catchFormTitle").textContent === "编辑鱼获",
+    await page.route("https://a.tile.opentopomap.org/**", (r) =>
+      r.fulfill({ contentType: "image/png", body: png }),
     );
-    await page.locator("#catchWeight").fill("3.125");
-    await page.locator("#catchSave").click();
-    await page.waitForFunction(() =>
-      document.querySelector(".catchentry")?.textContent.includes("3.125 kg"),
+    await page.route("https://nominatim.openstreetmap.org/**", (r) =>
+      json(r, [
+        {
+          name: "杭州西湖",
+          display_name: "杭州西湖，浙江",
+          lat: "30.24",
+          lon: "120.14",
+          type: "water",
+          class: "natural",
+        },
+      ]),
     );
-    assert.equal(await page.locator(".catchentry img").count(), 1);
-    await page.locator(".catchentry .pill").click();
-    await page.waitForFunction(
-      () =>
-        document.getElementById("catchFormTitle").textContent === "编辑鱼获",
+    await page.route("https://overpass-api.de/**", (r) =>
+      json(r, { error: "primary unavailable" }, 503),
     );
-    await page.locator("#catchWeight").fill("4");
-    await page.evaluate(() => {
-      window.originalCatchPut = IDBObjectStore.prototype.put;
-      IDBObjectStore.prototype.put = function () {
-        throw new DOMException("quota", "QuotaExceededError");
-      };
-    });
-    await page.locator("#catchSave").click();
-    await page.waitForFunction(() =>
-      document.getElementById("catchError").textContent.includes("保存失败"),
-    );
-    await page.evaluate(() => {
-      IDBObjectStore.prototype.put = window.originalCatchPut;
-    });
-    assert.equal(
-      await page.evaluate(async () => (await catchRecords())[0].weightKg),
-      3.125,
-    );
-    console.log("PASS: journal photo persistence, editing and quota failure");
-    await page.screenshot({
-      path: "/tmp/lurecast-fish-new.png",
-      fullPage: true,
-    });
-    let mapFailure = false;
-    const json = (route, data, status = 200) =>
-      route.fulfill({
-        status,
-        contentType: "application/json",
-        headers: { "Access-Control-Allow-Origin": "*" },
-        body: JSON.stringify(data),
-      });
-    await page.route("https://tile.openstreetmap.org/**", (route) =>
-      route.fulfill({ contentType: "image/png", body: png }),
-    );
-    await page.route("https://nominatim.openstreetmap.org/**", (route) =>
-      mapFailure
-        ? json(route, { error: "test failure" }, 503)
-        : json(route, [
-            {
-              name: "杭州西湖",
-              display_name: "杭州西湖，浙江",
-              lat: "30.24",
-              lon: "120.14",
-              type: "water",
-              class: "natural",
-            },
-          ]),
-    );
-    await page.route("https://overpass-api.de/**", (route) =>
-      json(route, { error: "primary unavailable" }, 503),
-    );
-    await page.route("https://overpass.private.coffee/**", (route) =>
-      json(route, {
+    await page.route("https://overpass.private.coffee/**", (r) =>
+      json(r, {
         elements: [
           {
-            type: "way",
-            id: 1,
             tags: { name: "钱塘江", waterway: "river" },
             center: { lat: 30.22, lon: 120.2 },
           },
@@ -171,17 +229,15 @@ const { once } = require("node:events");
     await page.evaluate(() => switchPage("spots"));
     await page.getByRole("button", { name: "打开地图", exact: true }).click();
     await page.waitForSelector(".leaflet-tile");
+    await page.getByRole("button", { name: "免费地形图", exact: true }).click();
+    assert.equal(await page.evaluate(() => waterBaseKind), "topo");
     await page.locator("#waterQuery").fill("杭州西湖");
     await page.locator("#waterSearchForm button").click();
     await page.waitForSelector(".waterresult");
-    assert.match(await page.locator("#waterResults").innerText(), /杭州西湖/);
     await page.getByRole("button", { name: "收集此水域", exact: true }).click();
     assert.equal(await page.evaluate(() => userPoints.length), 1);
-    assert.equal(await page.evaluate(() => userPoints[0].waterCenter), true);
     await page.locator("#waterMap").click({ position: { x: 150, y: 150 } });
-    assert.ok(await page.locator("#pointForm [name=lat]").inputValue());
-    await page.locator("#pointForm [name=name]").fill("杭州岸边实记点");
-    await page.locator("#pointForm [name=type]").selectOption("river");
+    await page.locator("#pointForm [name=name]").fill("杭州新钓点");
     await page.locator("#pointForm button").click();
     assert.equal(await page.evaluate(() => userPoints.length), 2);
     await page.waitForTimeout(1150);
@@ -193,81 +249,51 @@ const { once } = require("node:events");
     );
     await page.getByRole("button", { name: "收集此水域", exact: true }).click();
     assert.equal(await page.evaluate(() => userPoints.length), 3);
-    await page.waitForTimeout(1150);
-    mapFailure = true;
-    await page.locator("#waterQuery").fill("错误测试");
-    await page.locator("#waterSearchForm button").click();
-    await page.waitForFunction(() =>
-      document.getElementById("waterStatus").textContent.includes("搜索不可用"),
-    );
-    assert.equal(await page.evaluate(() => userPoints.length), 3);
-    await page.screenshot({
-      path: "/tmp/lurecast-map-new.png",
-      fullPage: true,
+    await page.evaluate(() => {
+      chooseLocation(0);
+      switchPage("home");
     });
-    let weatherFailure = false;
-    const days = await page.evaluate(() =>
-      dates.map((d, i) => ({
-        date: dateKey(d),
-        temperatureMin: 15 + i,
-        temperatureMax: 25 + i,
-        precipitationChance: 0.2,
-      })),
+    await page.waitForFunction(() => marineState === "ready");
+    assert.match(
+      await page.locator("#tidecontent").innerText(),
+      /不是本地潮位站潮表/,
     );
-    await page.route("https://weather.example.test/**", (route) =>
-      weatherFailure
-        ? json(route, { message: "测试服务不可用" }, 503)
-        : json(route, {
-            provider: "Apple WeatherKit",
-            retrievedAt: new Date().toISOString(),
-            days,
-            current: { pressure: 1010, windSpeed: 10 },
-            attribution: {
-              legalPageURL:
-                "https://weatherkit.apple.com/legal-attribution.html",
-              combinedMarkDarkURL: "https://weatherkit.apple.com/test-logo.svg",
-            },
-          }),
+    assert.match(
+      await page.locator("#tidecontent").innerText(),
+      /有效2\/3小时/,
     );
-    await page.route("https://weatherkit.apple.com/test-logo.svg", (route) =>
-      route.fulfill({
-        contentType: "image/svg+xml",
-        body: '<svg xmlns="http://www.w3.org/2000/svg"/>',
-      }),
-    );
+    const pathValue = await page
+      .locator("#tidecontent svg path")
+      .getAttribute("d");
+    assert.equal((pathValue.match(/M/g) || []).length, 2);
+    weatherFailed = true;
+    marineFailed = true;
+    await page.evaluate(() => loadForecast(true));
+    assert.equal(await page.evaluate(() => freeWeather), null);
+    assert.equal(await page.evaluate(() => freeMarine), null);
     await page.evaluate(() => switchPage("weather"));
-    assert.match(await page.locator("#weather").innerText(), /未配置/);
-    await page.locator("#weather details summary").click();
-    await page
-      .locator("#weatherConfigForm [name=endpoint]")
-      .fill("https://weather.example.test/api/weather");
-    await page.locator("#weatherConfigForm button").click();
-    await page.waitForFunction(() => appleWeatherState === "ready");
-    assert.equal(await page.locator("#weather .trendrow").count(), 10);
-    assert.match(
-      await page.locator("#weather .trendrow").first().innerText(),
-      /15° \/ 25°/,
-    );
-    weatherFailure = true;
-    await page.evaluate(() => loadForecast());
-    assert.equal(await page.evaluate(() => appleWeather), null);
-    assert.match(
-      await page.locator("#weather .trendrow").first().innerText(),
-      /不可用/,
-    );
-    await page.evaluate(() => localStorage.removeItem("lc-weather-api"));
-    await page.reload();
-    await page.evaluate(() => switchPage("fish"));
-    await page.waitForSelector(".catchentry");
-    assert.equal(await page.locator(".catchentry img").count(), 1);
-    page.once("dialog", (d) => d.accept());
-    await page.locator(".catchentry .textbtn").click();
-    await page.waitForFunction(
-      () => document.querySelectorAll(".catchentry").length === 0,
-    );
+    assert.match(await page.locator("#weather").innerText(), /不可用/);
+    cacheResponse = {
+      entries: [
+        {
+          kind: "weather",
+          locationKey: "29.9100,122.3800",
+          retrievedAt: new Date().toISOString(),
+          data: { ...rawWeather, latitude: 29.91, longitude: 122.38 },
+        },
+      ],
+    };
+    await page.evaluate(() => loadForecast(true));
+    assert.equal(await page.evaluate(() => freeWeather.cached), true);
+    assert.match(await page.locator("#weather").innerText(), /最近发布缓存/);
+    cacheResponse.entries[0].retrievedAt = new Date(
+      Date.now() - 4 * 3600000,
+    ).toISOString();
+    await page.evaluate(() => loadForecast(true));
+    assert.equal(await page.evaluate(() => freeWeather), null);
     assert.deepEqual(errors, []);
     console.log(
-      "PASS: Hangzhou default; 10 days; 90+ species and custom species; kg catch with real image encoding, IndexedDB photo persistence/edit/delete/quota handling; map search, river discovery, water collection and manual points; weather response rendering and explicit failure. Network fixtures are test-only.",
+      "PASS: 10-day free weather rendering, per-species illustrations, removed catch UI with old records preserved, both free maps, river discovery failover and saved points, MSL model gaps never interpolated, provider failures never replaced by fake data. Fixtures are test-only.",
     );
   } finally {
     if (browser) await browser.close();

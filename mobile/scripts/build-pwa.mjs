@@ -1,7 +1,16 @@
-import { mkdir, readFile, writeFile, copyFile, cp } from "node:fs/promises";
+import {
+  mkdir,
+  readFile,
+  writeFile,
+  copyFile,
+  cp,
+  rm,
+  access,
+} from "node:fs/promises";
 import { createHash } from "node:crypto";
 const output = "pwa-dist";
 await mkdir(output, { recursive: true });
+await rm(output + "/journal.js", { force: true });
 let html = await readFile("www/index.html", "utf8");
 html = html.replace(
   "</head>",
@@ -13,8 +22,10 @@ for (const f of [
   "upgrade.js",
   "app.js",
   "fish-data.js",
-  "journal.js",
+  "fish-art.js",
+  "fish-library.js",
   "map.js",
+  "free-data.js",
   "weather.js",
 ])
   await copyFile(`www/${f}`, `${output}/${f}`);
@@ -59,7 +70,7 @@ const installed=window.matchMedia('(display-mode: standalone)').matches||navigat
 const install=document.createElement('section');
 install.className='card cardpad';
 install.style.marginBottom='20px';
-install.innerHTML='<h2>iPhone 网页安装版</h2><p class="sub">'+(installed?'已从主屏幕打开。':'使用 Safari 打开本页，点“分享”→“添加到主屏幕”→“添加”。')+'首次联网加载并完成缓存后可离线打开。本机收藏和计划不会上传。浏览器版本与主屏幕版本的数据可能分开，请在固定入口使用。</p><p class="sub">网页安装版，无需 Apple Developer 会员。Apple 天气需授权后端；潮汐未配置；在线地图需网络。</p>';
+install.innerHTML='<h2>iPhone 网页安装版</h2><p class="sub">'+(installed?'已从主屏幕打开。':'使用 Safari 打开本页，点“分享”→“添加到主屏幕”→“添加”。')+'首次联网加载并完成缓存后可离线打开。本机收藏和计划不会上传。浏览器版本与主屏幕版本的数据可能分开，请在固定入口使用。</p><p class="sub">网页安装版，无需 Apple Developer 会员。天气采用免费非商业接口；海平面模型不等于本地潮表；地图需联网。</p>';
 document.querySelector('.main').prepend(install);
 `,
 );
@@ -68,8 +79,10 @@ const files = [
   "upgrade.js",
   "app.js",
   "fish-data.js",
-  "journal.js",
+  "fish-art.js",
+  "fish-library.js",
   "map.js",
+  "free-data.js",
   "weather.js",
   "vendor/leaflet/leaflet.js",
   "vendor/leaflet/leaflet.css",
@@ -83,6 +96,18 @@ const files = [
   "manifest.webmanifest",
   "install.js",
 ];
+await mkdir(output + "/data", { recursive: true });
+let forecastCache = { generatedAt: new Date(0).toISOString(), entries: [] };
+try {
+  forecastCache = JSON.parse(
+    await readFile("forecast-output/free-forecast.json", "utf8"),
+  );
+} catch {}
+await writeFile(
+  output + "/data/free-forecast.json",
+  JSON.stringify(forecastCache),
+);
+files.push("data/free-forecast.json");
 const hash = createHash("sha256");
 for (const f of files) hash.update(await readFile(`${output}/${f}`));
 const version = hash.digest("hex").slice(0, 16);
