@@ -39,3 +39,19 @@ Android 需配置 Android Studio / SDK / JDK；iOS 需 macOS / Xcode。当前环
 - https://dev.qweather.com/docs/api/ocean/tide/
 - https://developer.amap.com/api/javascript-api-v2/guide/abc/jscode
 - https://www.miit.gov.cn/jgsj/xgj/wjfb/art/2023/art_dd783a581c9644a4aee10afa582811db.html
+
+## 本轮本机功能测试版
+
+新增手机端区域 / 自建钓点收藏、野钓 / 黑坑分类、钓点坐标记录、计划时间和备注编辑。未配置接口明确不可用；保留黑色界面与翘嘴鲌、中国花鲈插画。浏览器功能测试通过，Android APK 构建通过；iOS 仅同步资源，未在 Xcode 验证。旧文档“尚未编译”的 Android 状态由本节更新。
+
+- [测试、构建与安装步骤](TESTING.md)
+- [服务官网、所需配置和安全填写方式](SERVICES.md)
+- `npm test`：运行手机页面的离线功能测试。
+
+## iPhone 工程后续维护
+
+补充黑色启动页、强制深色模式、安全区配置、共享 App scheme，以及 `ios:check` / `ios:simulator` / `ios:archive` / `ios:ipa` 命令。iOS 原生编译和签名尚未执行，当前没有可安装 IPA。详见 [iPhone 测试版交接](IOS.md)。
+
+## 不购买 Apple Developer 会员的路线
+
+新增同源的 iPhone 主屏幕网页版本：`npm run test:pwa`。生成文件、安装步骤及公开链接与5人访问限制的区别见 [PWA.md](PWA.md)。这不是原生 IPA；部署和 Safari 真机安装尚未执行。

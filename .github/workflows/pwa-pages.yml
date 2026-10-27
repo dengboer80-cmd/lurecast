@@ -1,0 +1,43 @@
+name: Publish LureCast home-screen web app
+# User approved a public link. Pages is not a five-person access gate.
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "mobile/**"
+      - "dist/**"
+      - ".github/workflows/pwa-pages.yml"
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+concurrency:
+  group: lurecast-pages
+  cancel-in-progress: false
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+      - name: Install locked dependencies
+        working-directory: mobile
+        run: npm ci
+      - name: Build and test offline app
+        working-directory: mobile
+        run: npm run test:pwa
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: mobile/pwa-dist
+      - name: Publish
+        id: deployment
+        uses: actions/deploy-pages@v4
