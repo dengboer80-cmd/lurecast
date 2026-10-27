@@ -36,7 +36,7 @@ js += `\nrenderRecommend=function(){document.getElementById('recommend').innerHT
 renderWeather=function(){document.getElementById('weather').innerHTML='<h1>未来15天天气</h1><div class="card cardpad"><p class="viewdesc">国内天气服务待配置，当前不提供预报数据。</p></div>'};
 renderTide=function(){document.getElementById('tidecontent').innerHTML='<div class="empty">国内潮汐服务待接入。<br>完整15天潮表尚未获得授权数据源。</div>'};
 renderHours=function(){document.getElementById('hours').innerHTML='<div class="empty">国内逐小时天气服务待接入。</div>'};
-document.querySelectorAll('#helpModal .help').forEach(e=>e.textContent='这是安卓与 iPhone 的 App 内测工程。天气、潮汐、地图和第三方账号服务尚未配置，当前不可用于实际预报判断。');
+document.querySelectorAll('#helpModal .help').forEach(e=>e.textContent='Apple WeatherKit需授权与独立后端，未接通时不提供预报；潮汐与账号尚未配置。地图按需连接OpenStreetMap，河湖不代表可垂钓许可。鱼获和照片仅保存在本机。');
 \n`;
 html = html.replace("renderNav();renderHome();", "renderNav();");
 html = html.replace(
