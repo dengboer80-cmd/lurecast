@@ -55,3 +55,7 @@ Android 需配置 Android Studio / SDK / JDK；iOS 需 macOS / Xcode。当前环
 ## 不购买 Apple Developer 会员的路线
 
 新增同源的 iPhone 主屏幕网页版本：`npm run test:pwa`。生成文件、安装步骤及公开链接与5人访问限制的区别见 [PWA.md](PWA.md)。这不是原生 IPA；部署和 Safari 真机安装尚未执行。
+
+## 杭州、10天天气、鱼获与河湖
+
+新增常见路亚鱼种库、自定义鱼种、公斤重量与本机照片鱼获记录、OpenStreetMap河湖搜索和自建钓点。天气改为10天，准备Apple WeatherKit的独立服务端接入，未配置时不可用。详见 [FEATURES.md](FEATURES.md)，其中明确区分真实外部服务、测试响应和未完成授权。

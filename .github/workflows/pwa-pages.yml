@@ -33,7 +33,11 @@ jobs:
         run: npm ci
       - name: Build and test offline app
         working-directory: mobile
-        run: npm run test:pwa
+        run: npm test && npm run test:features && npm run test:weather && npm run test:pwa
+      - name: Check public river and lake services
+        working-directory: mobile
+        continue-on-error: true
+        run: node scripts/check-map-services.mjs
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
         with:

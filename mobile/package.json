@@ -13,12 +13,16 @@
     "ios:check": "node tests/ios-config.cjs",
     "ios:ipa": "bash scripts/ios-build.sh export",
     "build:pwa": "npm run prepare:web && node scripts/build-pwa.mjs",
-    "test:pwa": "npm run build:pwa && node tests/pwa.cjs"
+    "test:pwa": "npm run build:pwa && node tests/pwa.cjs",
+    "test:weather": "node --test tests/weatherkit.test.mjs",
+    "weather:server": "node server/weatherkit.mjs",
+    "test:features": "npm run prepare:web && node tests/features.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",
     "@capacitor/core": "^8.0.0",
-    "@capacitor/ios": "^8.0.0"
+    "@capacitor/ios": "^8.0.0",
+    "leaflet": "1.9.4"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.0",

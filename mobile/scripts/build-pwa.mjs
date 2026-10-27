@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile, copyFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, copyFile, cp } from "node:fs/promises";
 import { createHash } from "node:crypto";
 const output = "pwa-dist";
 await mkdir(output, { recursive: true });
@@ -9,8 +9,16 @@ html = html.replace(
 );
 html = html.replace("</body>", '<script src="./install.js"></script></body>');
 await writeFile(`${output}/index.html`, html);
-for (const f of ["upgrade.js", "app.js"])
+for (const f of [
+  "upgrade.js",
+  "app.js",
+  "fish-data.js",
+  "journal.js",
+  "map.js",
+  "weather.js",
+])
   await copyFile(`www/${f}`, `${output}/${f}`);
+await cp("www/vendor", output + "/vendor", { recursive: true });
 await copyFile(
   "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
   `${output}/icon.png`,
@@ -51,7 +59,7 @@ const installed=window.matchMedia('(display-mode: standalone)').matches||navigat
 const install=document.createElement('section');
 install.className='card cardpad';
 install.style.marginBottom='20px';
-install.innerHTML='<h2>iPhone 网页安装版</h2><p class="sub">'+(installed?'已从主屏幕打开。':'使用 Safari 打开本页，点“分享”→“添加到主屏幕”→“添加”。')+'首次联网加载并完成缓存后可离线打开。本机收藏和计划不会上传。浏览器版本与主屏幕版本的数据可能分开，请在固定入口使用。</p><p class="sub">网页安装版，无需 Apple Developer 会员。天气、潮汐和地图未配置，不可用。</p>';
+install.innerHTML='<h2>iPhone 网页安装版</h2><p class="sub">'+(installed?'已从主屏幕打开。':'使用 Safari 打开本页，点“分享”→“添加到主屏幕”→“添加”。')+'首次联网加载并完成缓存后可离线打开。本机收藏和计划不会上传。浏览器版本与主屏幕版本的数据可能分开，请在固定入口使用。</p><p class="sub">网页安装版，无需 Apple Developer 会员。Apple 天气需授权后端；潮汐未配置；在线地图需网络。</p>';
 document.querySelector('.main').prepend(install);
 `,
 );
@@ -59,6 +67,18 @@ const files = [
   "index.html",
   "upgrade.js",
   "app.js",
+  "fish-data.js",
+  "journal.js",
+  "map.js",
+  "weather.js",
+  "vendor/leaflet/leaflet.js",
+  "vendor/leaflet/leaflet.css",
+  "vendor/leaflet/LICENSE",
+  "vendor/leaflet/images/layers.png",
+  "vendor/leaflet/images/layers-2x.png",
+  "vendor/leaflet/images/marker-icon.png",
+  "vendor/leaflet/images/marker-icon-2x.png",
+  "vendor/leaflet/images/marker-shadow.png",
   "icon.png",
   "manifest.webmanifest",
   "install.js",

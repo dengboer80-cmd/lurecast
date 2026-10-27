@@ -1,4 +1,4 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile, cp } from "node:fs/promises";
 await mkdir("www", { recursive: true });
 let html = await readFile("../dist/index.html", "utf8");
 html = html.replace(
@@ -9,6 +9,7 @@ html = html.replace(
   "</head>",
   "<style>body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}@media(max-width:900px){.rail{padding-bottom:calc(12px + env(safe-area-inset-bottom))}}</style></head>",
 );
+html = html.replaceAll("15天", "10天").replaceAll("length:15", "length:10");
 let js = await readFile("../dist/upgrade.js", "utf8");
 // The installable preview must not silently depend on overseas services.
 let start = js.indexOf("async function loadForecast()"),
@@ -42,13 +43,34 @@ html = html.replace(
   "未来 15 天，找到属于你的下一次黄金窗口。",
   "手动安排未来15天出钓；天气与潮汐暂不可用。",
 );
-html = html.replace("</body>", '<script src="app.js"></script></body>');
+html = html.replace(
+  "</body>",
+  '<script src="app.js"></script><script src="fish-data.js"></script><script src="journal.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="weather.js"></script></body>',
+);
 html = html.replace(
   "</head>",
   "<style>form label{display:block;margin:14px 0}form input,form textarea,form select{display:block;width:100%;padding:12px;background:#000;color:#fff;border:1px solid #454545;border-radius:6px;margin-top:6px}form{margin:12px 0}input,textarea,select{font-size:16px}.spot{flex-wrap:wrap;gap:12px}.spot>div{flex:1 1 180px}.card h3{overflow-wrap:anywhere}button{min-height:44px}.day{min-width:82px}.day b,.day small{white-space:nowrap}.recommend{display:block}@media(max-width:800px){.rail{height:calc(73px + env(safe-area-inset-bottom))}}.toast{bottom:calc(90px + env(safe-area-inset-bottom))}</style></head>",
 );
 js = js.replace("loadForecast();", "").replace(/renderHome\(\);\s*$/, "");
-await writeFile("www/app.js", await readFile("scripts/app.js", "utf8"));
+for (const name of [
+  "app.js",
+  "fish-data.js",
+  "journal.js",
+  "map.js",
+  "weather.js",
+])
+  await writeFile("www/" + name, await readFile("scripts/" + name, "utf8"));
+await mkdir("www/vendor/leaflet", { recursive: true });
+for (const name of ["leaflet.js", "leaflet.css"])
+  await cp("node_modules/leaflet/dist/" + name, "www/vendor/leaflet/" + name);
+await cp("node_modules/leaflet/LICENSE", "www/vendor/leaflet/LICENSE");
+await cp("node_modules/leaflet/dist/images", "www/vendor/leaflet/images", {
+  recursive: true,
+});
+html = html.replace(
+  "</head>",
+  '<link rel="stylesheet" href="./vendor/leaflet/leaflet.css"><style>.fishlibrary{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;max-height:520px;overflow:auto;margin:18px 0}.catchphotos{display:flex;gap:12px;flex-wrap:wrap}.catchphotos img{width:140px;height:140px;object-fit:cover;border-radius:8px}.catchentry{margin:14px 0}.maptools{display:flex;flex-wrap:wrap;gap:8px}.waterresult{padding:14px 0;border-bottom:1px solid #333}.appleattribution{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0}.appleattribution img{height:24px;max-width:140px}#waterMap{isolation:isolate;z-index:0}.leaflet-control a{color:#111}input,select,textarea{max-width:100%}#fish>label{display:block;margin:12px 0}#fish>label input,#fish>label select{background:#000;color:#fff;border:1px solid #555;padding:12px;width:100%}input[type=checkbox]{width:auto;display:inline-block}.metricvalue{white-space:normal;font-size:22px}details summary{cursor:pointer;min-height:44px}</style></head>',
+);
 await writeFile("www/index.html", html);
 await writeFile("www/upgrade.js", js);
 if (
@@ -58,5 +80,5 @@ if (
 )
   throw Error("Overseas dependency remains");
 console.log(
-  "Prepared bundled offline preview; no overseas API or CDN requests.",
+  "Prepared bundled assets; online maps load only on user request, and unconfigured weather stays unavailable.",
 );

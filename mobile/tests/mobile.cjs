@@ -8,13 +8,27 @@ const fs = require("node:fs");
   const server = http
     .createServer((q, r) => {
       const name = q.url === "/" ? "index.html" : q.url.slice(1);
-      if (!["index.html", "upgrade.js", "app.js"].includes(name)) {
+      const target = require("node:path").resolve(__dirname, "../www", name);
+      if (
+        !target.startsWith(
+          require("node:path").resolve(__dirname, "../www") +
+            require("node:path").sep,
+        ) ||
+        !fs.existsSync(target) ||
+        !fs.statSync(target).isFile()
+      ) {
         r.writeHead(404).end();
         return;
       }
       r.setHeader(
         "Content-Type",
-        name.endsWith(".js") ? "text/javascript" : "text/html",
+        name.endsWith(".js")
+          ? "text/javascript"
+          : name.endsWith(".css")
+            ? "text/css"
+            : name.endsWith(".png")
+              ? "image/png"
+              : "text/html",
       );
       r.end(
         fs.readFileSync(require("node:path").join(__dirname, "../www", name)),
@@ -39,7 +53,7 @@ const fs = require("node:fs");
     });
     await page.goto("http://127.0.0.1:8173");
     await page.waitForSelector("#dates .day");
-    assert.equal(await page.locator("#dates .day").count(), 15);
+    assert.equal(await page.locator("#dates .day").count(), 10);
     assert.match(await page.locator("#tidecontent").innerText(), /不可用/);
     await page.evaluate(() => switchPage("fish"));
     assert.equal(await page.locator("#fish svg[role=img]").count(), 2);
@@ -93,7 +107,7 @@ const fs = require("node:fs");
       ),
       "rgb(0, 0, 0)",
     );
-    assert.equal(await page.locator("#weather .trendrow").count(), 15);
+    assert.equal(await page.locator("#weather .trendrow").count(), 10);
     for (const viewport of [
       { width: 375, height: 812 },
       { width: 844, height: 390 },
@@ -137,7 +151,7 @@ const fs = require("node:fs");
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(
-      "PASS: 15 dates, unavailable services, two fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
+      "PASS: 10 dates, unavailable services, two fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
     );
   } finally {
     if (browser) await browser.close();

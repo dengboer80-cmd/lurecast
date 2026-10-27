@@ -35,7 +35,7 @@ assert.ok(
   spm.includes(`exact: "${iosVersion}"`),
   "Swift package matches locked Capacitor iOS dependency",
 );
-for (const f of ["index.html", "upgrade.js", "app.js"])
+for (const f of ["index.html", "upgrade.js", "app.js", "fish-data.js", "journal.js", "map.js", "weather.js"])
   assert.deepEqual(
     fs.readFileSync(path.join(root, "www", f)),
     fs.readFileSync(path.join(root, "ios/App/App/public", f)),

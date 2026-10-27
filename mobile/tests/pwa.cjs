@@ -8,15 +8,6 @@ const assert = require("node:assert/strict");
 const { once } = require("node:events");
 (async () => {
   const root = path.join(__dirname, "../pwa-dist");
-  const allowed = new Set([
-    "index.html",
-    "upgrade.js",
-    "app.js",
-    "icon.png",
-    "manifest.webmanifest",
-    "install.js",
-    "sw.js",
-  ]);
   const server = http
     .createServer((req, res) => {
       const url = new URL(req.url, "http://localhost");
@@ -25,7 +16,12 @@ const { once } = require("node:events");
         return;
       }
       const file = url.pathname.slice("/lurecast/".length) || "index.html";
-      if (!allowed.has(file)) {
+      const target = path.resolve(root, file);
+      if (
+        !target.startsWith(root + path.sep) ||
+        !fs.existsSync(target) ||
+        !fs.statSync(target).isFile()
+      ) {
         res.writeHead(404).end();
         return;
       }
@@ -35,9 +31,11 @@ const { once } = require("node:events");
           ? "text/javascript"
           : file.endsWith(".webmanifest")
             ? "application/manifest+json"
-            : file.endsWith(".png")
-              ? "image/png"
-              : "text/html",
+            : file.endsWith(".css")
+              ? "text/css"
+              : file.endsWith(".png")
+                ? "image/png"
+                : "text/html",
       );
       res.end(fs.readFileSync(path.join(root, file)));
     })

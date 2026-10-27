@@ -1,3 +1,14 @@
+function requestTimeout(ms) {
+  if (typeof AbortSignal.timeout === "function") return AbortSignal.timeout(ms);
+  const controller = new AbortController();
+  setTimeout(() => controller.abort(), ms);
+  return controller.signal;
+}
+// Append Hangzhou so existing numeric region favorites keep their original meaning.
+if (!locs.some((l) => l[0] === "杭州"))
+  locs.push(["杭州", "浙江 · 杭州参考区域", 30.2741, 120.1551]);
+locationIndex = locs.findIndex((l) => l[0] === "杭州");
+document.getElementById("placename").textContent = locs[locationIndex][0];
 // Keep in-memory state unchanged if WebKit refuses a local storage write.
 function commitList(key, next, apply) {
   try {
