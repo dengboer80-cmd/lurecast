@@ -1,0 +1,20 @@
+name: Research free weather tide and map sources
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  research:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Read official terms and test public APIs
+        working-directory: mobile
+        run: node scripts/research-free-data.mjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: free-source-research
+          path: mobile/research-output/free-sources.json

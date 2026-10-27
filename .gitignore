@@ -9,3 +9,5 @@ node_modules/
 mobile/www/
 mobile/pwa-dist/
 *.p8
+
+mobile/research-output/
