@@ -8,3 +8,4 @@ node_modules/
 *.mobileprovision
 mobile/www/
 mobile/pwa-dist/
+*.p8
