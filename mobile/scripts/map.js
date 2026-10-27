@@ -153,12 +153,25 @@ async function waterRequest(url) {
   waterBusy = true;
   lastWaterRequest = Date.now();
   try {
-    const r = await fetch(url, {
-      signal: requestTimeout(20000),
-      headers: { Accept: "application/json" },
-    });
-    if (!r.ok) throw Error(`地图服务暂不可用（${r.status}）`);
-    return await r.json();
+    const urls = Array.isArray(url) ? url : [url];
+    let lastError;
+    for (let i = 0; i < urls.length; i++) {
+      try {
+        if (i) waterStatus("主河湖服务暂不可用，正在尝试备用数据服务…");
+        const r = await fetch(urls[i], {
+          signal: requestTimeout(urls.length > 1 ? (i ? 15000 : 8000) : 20000),
+          headers: { Accept: "application/json" },
+        });
+        if (!r.ok) throw Error(`地图服务暂不可用（${r.status}）`);
+        const data = await r.json();
+        if (urls.length > 1 && !Array.isArray(data.elements))
+          throw Error("河湖返回格式不可用");
+        return data;
+      } catch (e) {
+        lastError = e;
+      }
+    }
+    throw lastError;
   } finally {
     waterBusy = false;
   }
@@ -223,8 +236,10 @@ async function discoverWaters() {
   waterStatus("查询当前地图中心附近约10公里内河流、湖泊与水库…");
   try {
     const data = await waterRequest(
-      "https://overpass-api.de/api/interpreter?" +
-        new URLSearchParams({ data: query }),
+      [
+        "https://overpass-api.de/api/interpreter?",
+        "https://overpass.private.coffee/api/interpreter?",
+      ].map((base) => base + new URLSearchParams({ data: query })),
     );
     if (!Array.isArray(data.elements)) throw Error("河湖返回格式不可用");
     waterResults = data.elements

@@ -124,7 +124,10 @@ const { once } = require("node:events");
       3.125,
     );
     console.log("PASS: journal photo persistence, editing and quota failure");
-    await page.screenshot({path:'/tmp/lurecast-fish-new.png',fullPage:true});
+    await page.screenshot({
+      path: "/tmp/lurecast-fish-new.png",
+      fullPage: true,
+    });
     let mapFailure = false;
     const json = (route, data, status = 200) =>
       route.fulfill({
@@ -151,6 +154,9 @@ const { once } = require("node:events");
           ]),
     );
     await page.route("https://overpass-api.de/**", (route) =>
+      json(route, { error: "primary unavailable" }, 503),
+    );
+    await page.route("https://overpass.private.coffee/**", (route) =>
       json(route, {
         elements: [
           {
@@ -195,7 +201,10 @@ const { once } = require("node:events");
       document.getElementById("waterStatus").textContent.includes("搜索不可用"),
     );
     assert.equal(await page.evaluate(() => userPoints.length), 3);
-    await page.screenshot({path:'/tmp/lurecast-map-new.png',fullPage:true});
+    await page.screenshot({
+      path: "/tmp/lurecast-map-new.png",
+      fullPage: true,
+    });
     let weatherFailure = false;
     const days = await page.evaluate(() =>
       dates.map((d, i) => ({
