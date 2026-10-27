@@ -14,7 +14,10 @@ jobs:
       - name: Read official terms and test public APIs
         working-directory: mobile
         run: node scripts/research-free-data.mjs
+      - name: Probe free forecast and sea-level APIs
+        working-directory: mobile
+        run: node scripts/research-free-data.mjs --api-only
       - uses: actions/upload-artifact@v4
         with:
           name: free-source-research
-          path: mobile/research-output/free-sources.json
+          path: mobile/research-output/*.json
