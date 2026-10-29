@@ -31,7 +31,10 @@ for (const f of [
   "tide-data.js",
   "stations.js",
   "bite-model.js",
+  "species-rules.js",
   "bite-ui.js",
+  "nation-data.js",
+  "nationwide.js",
 ])
   await copyFile(`www/${f}`, `${output}/${f}`);
 await cp("www/vendor", output + "/vendor", { recursive: true });
@@ -94,7 +97,10 @@ const files = [
   "tide-data.js",
   "stations.js",
   "bite-model.js",
+  "species-rules.js",
   "bite-ui.js",
+  "nation-data.js",
+  "nationwide.js",
   "vendor/leaflet/leaflet.js",
   "vendor/leaflet/leaflet.css",
   "vendor/leaflet/LICENSE",

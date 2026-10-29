@@ -14,6 +14,7 @@
  function evaluate(p,input){
   const reasons=[],missing=[];
   if(!p)return {score:null,label:'该鱼种尚未建立规则',reasons,missing:['鱼种参数']};
+  if(input.habitat==='unknown')return {score:null,label:'请先确认淡水或海水',reasons,missing:['水域类型']};
   if(input.habitat&&p.habitat!==input.habitat)return {score:null,label:'与所选水域类型不匹配',reasons,missing:[]};
   if(finite(input.weatherCode)&&input.weatherCode>=95)return {score:null,label:'雷暴天气，暂停出钓建议',reasons:['天气代码显示雷暴'],missing:[]};
   if(!finite(input.waterTemperature))missing.push('水温');

@@ -90,7 +90,7 @@ const fs = require("node:fs");
     assert.equal(await page.locator("#dates .day").count(), 15);
     assert.match(await page.locator("#tidecontent").innerText(), /选择潮位站|不可用/);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 6);
+    assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 12);
     await page.evaluate(() => switchPage("spots"));
     await page.locator("#spots .star").first().click();
     await page.locator("[name=name]").fill("<钓点测试>");

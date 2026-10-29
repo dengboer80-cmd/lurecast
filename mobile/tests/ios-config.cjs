@@ -49,7 +49,10 @@ for (const f of [
   "tide-data.js",
   "stations.js",
   "bite-model.js",
+  "species-rules.js",
   "bite-ui.js",
+  "nation-data.js",
+  "nationwide.js",
 ])
   assert.deepEqual(
     fs.readFileSync(path.join(root, "www", f)),

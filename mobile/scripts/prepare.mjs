@@ -46,7 +46,7 @@ html = html.replace(
 );
 html = html.replace(
   "</body>",
-  '<script src="app.js"></script><script src="fish-data.js"></script><script src="fish-art.js"></script><script src="fish-library.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="free-data.js"></script><script src="weather.js"></script><script src="tide-data.js"></script><script src="stations.js"></script><script src="bite-model.js"></script><script src="bite-ui.js"></script></body>',
+  '<script src="app.js"></script><script src="fish-data.js"></script><script src="fish-art.js"></script><script src="fish-library.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="free-data.js"></script><script src="weather.js"></script><script src="tide-data.js"></script><script src="stations.js"></script><script src="bite-model.js"></script><script src="species-rules.js"></script><script src="bite-ui.js"></script><script src="nation-data.js"></script><script src="nationwide.js"></script></body>',
 );
 html = html.replace(
   "</head>",
@@ -64,7 +64,10 @@ for (const name of [
   "tide-data.js",
   "stations.js",
   "bite-model.js",
+  "species-rules.js",
   "bite-ui.js",
+  "nation-data.js",
+  "nationwide.js",
 ])
   await writeFile("www/" + name, await readFile("scripts/" + name, "utf8"));
 await mkdir("www/vendor/leaflet", { recursive: true });
