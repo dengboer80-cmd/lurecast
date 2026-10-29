@@ -14,10 +14,11 @@
     "ios:ipa": "bash scripts/ios-build.sh export",
     "build:pwa": "npm run prepare:web && node scripts/build-pwa.mjs",
     "test:pwa": "npm run build:pwa && node tests/pwa.cjs",
-    "test:weather": "node --test tests/free-data.test.cjs",
+    "test:weather": "node --test tests/free-data.test.cjs tests/station-bite.test.cjs",
     "weather:server": "node server/weatherkit.mjs",
     "test:features": "npm run prepare:web && node tests/features.cjs",
-    "refresh:free-data": "node scripts/refresh-free-cache.mjs"
+    "refresh:free-data": "node scripts/refresh-free-cache.mjs",
+    "test:conditions": "node --test tests/station-bite.test.cjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.0.0",

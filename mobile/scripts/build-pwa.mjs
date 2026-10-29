@@ -6,6 +6,7 @@ import {
   cp,
   rm,
   access,
+  readdir,
 } from "node:fs/promises";
 import { createHash } from "node:crypto";
 const output = "pwa-dist";
@@ -27,9 +28,15 @@ for (const f of [
   "map.js",
   "free-data.js",
   "weather.js",
+  "tide-data.js",
+  "stations.js",
+  "bite-model.js",
+  "bite-ui.js",
 ])
   await copyFile(`www/${f}`, `${output}/${f}`);
 await cp("www/vendor", output + "/vendor", { recursive: true });
+await cp("www/assets", output + "/assets", { recursive: true });
+await cp("www/data/tides", output + "/data/tides", { recursive: true });
 await copyFile(
   "ios/App/App/Assets.xcassets/AppIcon.appiconset/AppIcon-512@2x.png",
   `${output}/icon.png`,
@@ -84,6 +91,10 @@ const files = [
   "map.js",
   "free-data.js",
   "weather.js",
+  "tide-data.js",
+  "stations.js",
+  "bite-model.js",
+  "bite-ui.js",
   "vendor/leaflet/leaflet.js",
   "vendor/leaflet/leaflet.css",
   "vendor/leaflet/LICENSE",
@@ -108,6 +119,9 @@ await writeFile(
   JSON.stringify(forecastCache),
 );
 files.push("data/free-forecast.json");
+for (const dir of ["assets", "data/tides"]) {
+  for (const name of await readdir(`${output}/${dir}`)) files.push(`${dir}/${name}`);
+}
 const hash = createHash("sha256");
 for (const f of files) hash.update(await readFile(`${output}/${f}`));
 const version = hash.digest("hex").slice(0, 16);

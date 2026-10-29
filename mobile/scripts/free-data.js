@@ -11,16 +11,16 @@
       new URLSearchParams({
         latitude: p.lat,
         longitude: p.lng,
-        forecast_days: 10,
+        forecast_days: 15,
         timezone: "Asia/Shanghai",
         temperature_unit: "celsius",
         wind_speed_unit: "kmh",
         precipitation_unit: "mm",
         daily:
-          "temperature_2m_min,temperature_2m_max,precipitation_probability_max,weather_code",
-        current: "temperature_2m,wind_speed_10m,pressure_msl",
+          "temperature_2m_min,temperature_2m_max,precipitation_probability_max,weather_code,sunrise,sunset,uv_index_max",
+        current: "temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,pressure_msl",
         hourly:
-          "temperature_2m,wind_speed_10m,pressure_msl,precipitation_probability",
+          "temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m,pressure_msl,precipitation_probability,weather_code",
       })
     );
   }
@@ -33,7 +33,7 @@
         longitude: p.lng,
         forecast_days: 10,
         timezone: "Asia/Shanghai",
-        hourly: "sea_level_height_msl",
+        hourly: "sea_level_height_msl,sea_surface_temperature",
         cell_selection: "sea",
       })
     );
@@ -45,7 +45,7 @@
     const d = raw.daily,
       h = raw.hourly;
     const days = d.time
-      .slice(0, 10)
+      .slice(0, 15)
       .map((date, i) => ({
         date,
         temperatureMin: number(d.temperature_2m_min?.[i]),
@@ -56,6 +56,9 @@
           ? d.precipitation_probability_max[i] / 100
           : null,
         weatherCode: number(d.weather_code?.[i]),
+        sunrise: typeof d.sunrise?.[i] === "string" ? d.sunrise[i] : null,
+        sunset: typeof d.sunset?.[i] === "string" ? d.sunset[i] : null,
+        uvIndex: number(d.uv_index_max?.[i]),
       }))
       .filter((d) => /^\d{4}-\d{2}-\d{2}$/.test(d.date));
     if (
@@ -71,6 +74,8 @@
         ? {
             time: raw.current.time,
             temperature: number(raw.current.temperature_2m),
+            apparentTemperature: number(raw.current.apparent_temperature),
+            windDirection: number(raw.current.wind_direction_10m),
             windSpeed: number(raw.current.wind_speed_10m),
             pressure: number(raw.current.pressure_msl),
           }
@@ -79,6 +84,9 @@
         ? h.time.map((time, i) => ({
             time,
             temperature: number(h.temperature_2m?.[i]),
+            apparentTemperature: number(h.apparent_temperature?.[i]),
+            windDirection: number(h.wind_direction_10m?.[i]),
+            weatherCode: number(h.weather_code?.[i]),
             windSpeed: number(h.wind_speed_10m?.[i]),
             pressure: number(h.pressure_msl?.[i]),
             precipitationChance: Number.isFinite(
@@ -117,8 +125,9 @@
     const hours = raw.hourly.time.map((time, i) => ({
       time,
       value: number(raw.hourly.sea_level_height_msl[i]),
+      waterTemperature: number(raw.hourly.sea_surface_temperature?.[i]),
     }));
-    if (!hours.some((h) => h.value !== null))
+    if (!hours.some((h) => h.value !== null || h.waterTemperature !== null))
       throw Error("所选位置没有有效海平面预报；不提供推算潮位或示例曲线");
     return {
       provider: "Open-Meteo Marine",

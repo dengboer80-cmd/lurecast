@@ -10,7 +10,7 @@ html = html.replace(
   "</head>",
   "<style>body{padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}@media(max-width:900px){.rail{padding-bottom:calc(12px + env(safe-area-inset-bottom))}}</style></head>",
 );
-html = html.replaceAll("15天", "10天").replaceAll("length:15", "length:10");
+// Keep the original 15-day planning and weather horizon.
 let js = await readFile("../dist/upgrade.js", "utf8");
 // The installable preview must not silently depend on overseas services.
 let start = js.indexOf("async function loadForecast()"),
@@ -42,11 +42,11 @@ document.querySelectorAll('#helpModal .help').forEach(e=>e.textContent='天气�
 html = html.replace("renderNav();renderHome();", "renderNav();");
 html = html.replace(
   "未来 15 天，找到属于你的下一次黄金窗口。",
-  "手动安排未来15天出钓；天气与潮汐暂不可用。",
+  "未来15天看天气，选择官方站点查潮汐。",
 );
 html = html.replace(
   "</body>",
-  '<script src="app.js"></script><script src="fish-data.js"></script><script src="fish-art.js"></script><script src="fish-library.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="free-data.js"></script><script src="weather.js"></script></body>',
+  '<script src="app.js"></script><script src="fish-data.js"></script><script src="fish-art.js"></script><script src="fish-library.js"></script><script src="vendor/leaflet/leaflet.js"></script><script src="map.js"></script><script src="free-data.js"></script><script src="weather.js"></script><script src="tide-data.js"></script><script src="stations.js"></script><script src="bite-model.js"></script><script src="bite-ui.js"></script></body>',
 );
 html = html.replace(
   "</head>",
@@ -61,6 +61,10 @@ for (const name of [
   "map.js",
   "free-data.js",
   "weather.js",
+  "tide-data.js",
+  "stations.js",
+  "bite-model.js",
+  "bite-ui.js",
 ])
   await writeFile("www/" + name, await readFile("scripts/" + name, "utf8"));
 await mkdir("www/vendor/leaflet", { recursive: true });
@@ -74,6 +78,9 @@ html = html.replace(
   "</head>",
   '<link rel="stylesheet" href="./vendor/leaflet/leaflet.css"><style>.fishlibrary{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin:18px 0}.speciesart,.speciescard>svg{width:100%;height:160px}.speciescard h3{margin:8px 0}.speciescard .sub{line-height:1.7}.catchphotos{display:flex;gap:12px;flex-wrap:wrap}.catchphotos img{width:140px;height:140px;object-fit:cover;border-radius:8px}.catchentry{margin:14px 0}.maptools{display:flex;flex-wrap:wrap;gap:8px}.waterresult{padding:14px 0;border-bottom:1px solid #333}.appleattribution{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:16px 0}.appleattribution img{height:24px;max-width:140px}#waterMap{isolation:isolate;z-index:0}.leaflet-control a{color:#111}input,select,textarea{max-width:100%}#fish>label{display:block;margin:12px 0}#fish>label input,#fish>label select{background:#000;color:#fff;border:1px solid #555;padding:12px;width:100%}input[type=checkbox]{width:auto;display:inline-block}.metricvalue{white-space:normal;font-size:22px}details summary{cursor:pointer;min-height:44px}</style></head>',
 );
+await cp("assets", "www/assets", {recursive:true});
+await cp("data/tides", "www/data/tides", {recursive:true});
+html = html.replace("</head>", `<link rel="stylesheet" href="./assets/iphone.css"></head>`);
 await writeFile("www/index.html", html);
 await writeFile("www/upgrade.js", js);
 if (

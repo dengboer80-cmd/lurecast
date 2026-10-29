@@ -87,10 +87,10 @@ const fs = require("node:fs");
     await page.waitForFunction(
       () => weatherState !== "loading" && marineState !== "loading",
     );
-    assert.equal(await page.locator("#dates .day").count(), 10);
-    assert.match(await page.locator("#tidecontent").innerText(), /不可用/);
+    assert.equal(await page.locator("#dates .day").count(), 15);
+    assert.match(await page.locator("#tidecontent").innerText(), /选择潮位站|不可用/);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
+    assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 6);
     await page.evaluate(() => switchPage("spots"));
     await page.locator("#spots .star").first().click();
     await page.locator("[name=name]").fill("<钓点测试>");
@@ -132,7 +132,7 @@ const fs = require("node:fs");
     assert.equal(await page.locator("#profile form").count(), 2);
     assert.match(await page.locator("#profile").innerText(), /<钓点测试>/);
     await page.evaluate(() => switchPage("weather"));
-    assert.match(await page.locator("#weather").innerText(), /不可用/);
+    assert.match(await page.locator("#weather").innerText(), /选择潮位站|不可用/);
     await page.evaluate(() => switchPage("home"));
     await page.screenshot({ path: "/tmp/lurecast-home.png", fullPage: true });
     assert.equal(
@@ -141,7 +141,7 @@ const fs = require("node:fs");
       ),
       "rgb(0, 0, 0)",
     );
-    assert.equal(await page.locator("#weather .trendrow").count(), 10);
+    assert.equal(await page.locator("#weather .trendrow").count(), 15);
     for (const viewport of [
       { width: 375, height: 812 },
       { width: 844, height: 390 },
@@ -185,7 +185,7 @@ const fs = require("node:fs");
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(
-      "PASS: 10 dates, unavailable services, all fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero unexpected external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
+      "PASS: 15 dates, unavailable services, all fish illustrations, favorites, point creation and persistence, duplicate plan prevention, plan edit and reload, black theme, zero JS errors, zero unexpected external requests, custom-point favorite and plan, portrait/landscape layouts, storage failure and corrupt-data recovery",
     );
   } finally {
     if (browser) await browser.close();

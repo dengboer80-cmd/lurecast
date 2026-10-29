@@ -1,17 +1,17 @@
 const { test } = require("node:test"),
   assert = require("node:assert/strict");
 const api = require("../scripts/free-data.js");
-test("free endpoints request ten days, explicit units and no API key", () => {
+test("free endpoints request fifteen days, explicit units and no API key", () => {
   const u = new URL(api.weatherURL({ lat: 30.2741, lng: 120.1551 }));
   assert.equal(u.hostname, "api.open-meteo.com");
-  assert.equal(u.searchParams.get("forecast_days"), "10");
+  assert.equal(u.searchParams.get("forecast_days"), "15");
   assert.equal(u.searchParams.get("temperature_unit"), "celsius");
   assert.equal(u.searchParams.get("apikey"), null);
   assert.equal(
     new URL(api.marineURL({ lat: 29.91, lng: 122.38 })).searchParams.get(
       "hourly",
     ),
-    "sea_level_height_msl",
+    "sea_level_height_msl,sea_surface_temperature",
   );
 });
 test("missing daily values remain missing, zero remains a real zero, no dates invented", () => {

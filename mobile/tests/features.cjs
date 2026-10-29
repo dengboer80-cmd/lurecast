@@ -67,7 +67,7 @@ const { once } = require("node:events");
     const today = new Date(
       new Date().toLocaleString("en-US", { timeZone: "Asia/Shanghai" }),
     );
-    const dayKeys = Array.from({ length: 10 }, (_, i) => {
+    const dayKeys = Array.from({ length: 15 }, (_, i) => {
       const d = new Date(today);
       d.setDate(d.getDate() + i);
       return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -111,7 +111,7 @@ const { once } = require("node:events");
     );
     await page.goto("http://127.0.0.1:" + server.address().port);
     await page.waitForFunction(() => weatherState === "ready");
-    assert.equal(await page.locator("#dates .day").count(), 10);
+    assert.equal(await page.locator("#dates .day").count(), 15);
     assert.match(await page.locator("#placename").innerText(), /杭州/);
     await page.evaluate(() => switchPage("weather"));
     assert.match(
@@ -120,8 +120,8 @@ const { once } = require("node:events");
     );
     assert.equal(await page.locator("#weatherConfigForm").count(), 0);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fishLibrary article").count(), 97);
-    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
+    assert.equal(await page.locator("#fishLibrary article").count(), 6);
+    assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 6);
     assert.equal(await page.locator("#catchForm").count(), 0);
     assert.ok(!(await page.locator("#fish").innerText()).includes("我的鱼获"));
     const labels = await page
@@ -129,17 +129,18 @@ const { once } = require("node:events");
       .evaluateAll((rows) =>
         rows.every((r) =>
           r
-            .querySelector("svg")
+            .querySelector(".fish3d")
             .getAttribute("aria-label")
-            .includes(r.querySelector("h3").textContent),
+            .includes(r.querySelector("h2").textContent),
         ),
       );
     assert.ok(labels);
-    await page.locator("#fishSearch").fill("翘嘴");
+    await page.getByLabel("鱼种", {exact:true}).selectOption("culter");
     assert.equal(await page.locator("#fishLibrary article").count(), 1);
-    await page.locator("#fishCustomForm [name=species]").fill("<补充鱼>");
-    await page.locator("#fishCustomForm button").click();
-    assert.equal(await page.locator("#fishLibrary article").count(), 98);
+    assert.match(await page.locator("#fishLibrary").innerText(), /数据不足/);
+    await page.getByLabel("手动水温（情景输入）", {exact:true}).fill("22");
+    await page.getByLabel("鱼种", {exact:true}).selectOption("all");
+    assert.equal(await page.locator("#fishLibrary article").count(), 6);
     await page.evaluate(() => window.scrollTo(0, 0));
     await page.screenshot({
       path: "/tmp/lurecast-fish-library.png",
@@ -254,18 +255,11 @@ const { once } = require("node:events");
       switchPage("home");
     });
     await page.waitForFunction(() => marineState === "ready");
-    assert.match(
-      await page.locator("#tidecontent").innerText(),
-      /不是本地潮位站潮表/,
-    );
-    assert.match(
-      await page.locator("#tidecontent").innerText(),
-      /有效2\/3小时/,
-    );
-    const pathValue = await page
-      .locator("#tidecontent svg path")
-      .getAttribute("d");
-    assert.equal((pathValue.match(/M/g) || []).length, 2);
+    await page.getByLabel("潮汐站点", {exact:true}).selectOption("QUB");
+    await page.waitForFunction(() => tideStationState === "ready");
+    assert.match(await page.locator("#tidecontent").innerText(), /香港海图基准面/);
+    assert.ok(await page.locator("#tidecontent svg path").getAttribute("d"));
+    assert.ok((await page.locator("#tidecontent .event").count()) >= 2);
     weatherFailed = true;
     marineFailed = true;
     await page.evaluate(() => loadForecast(true));
@@ -293,7 +287,7 @@ const { once } = require("node:events");
     assert.equal(await page.evaluate(() => freeWeather), null);
     assert.deepEqual(errors, []);
     console.log(
-      "PASS: 10-day free weather rendering, per-species illustrations, removed catch UI with old records preserved, both free maps, river discovery failover and saved points, MSL model gaps never interpolated, provider failures never replaced by fake data. Fixtures are test-only.",
+      "PASS: 15-day free weather rendering, realistic fish cards, removed catch UI with old records preserved, both free maps, river discovery failover and saved points, official bundled station tides, provider failures never replaced by fake data. Fixtures are test-only.",
     );
   } finally {
     if (browser) await browser.close();

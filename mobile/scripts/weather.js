@@ -22,7 +22,7 @@ function weatherDay(i = selected) {
 }
 function weatherStateText() {
   return {
-    loading: "正在获取免费10天天气…",
+    loading: "正在获取免费15天天气…",
     ready: "Open-Meteo · 真实模型天气",
     error: "天气暂不可用：" + weatherError,
   }[weatherState];
@@ -182,63 +182,36 @@ renderDates = function () {
 };
 renderWeather = function () {
   document.getElementById("weather").innerHTML =
-    `<h1>未来10天天气</h1><p class="sub">${esc(weatherLocation().name)} · ${esc(weatherStateText())}</p><div class="card">${dates
+    `<h1>未来15天天气</h1><p class="sub">${esc(weatherLocation().name)} · ${esc(weatherStateText())}</p><div class="card">${dates
       .map((d, i) => {
         const w = weatherDay(i),
           available =
             w && w.temperatureMin !== null && w.temperatureMax !== null;
-        return `<div class="trendrow"><span>${fmt(d)} ${weekday(d)}</span><span>${available ? `${weatherNumber(w.temperatureMin)}° / ${weatherNumber(w.temperatureMax)}°` : "预报不可用"}</span><span>${Number.isFinite(w?.precipitationChance) ? Math.round(w.precipitationChance * 100) + "%" : "—"}</span><button onclick="selectDay(${i});switchPage('home')">详情</button></div>`;
+        return `<div class="trendrow"><span>${fmt(d)} ${weekday(d)}</span><span>${available ? `${weatherNumber(w.temperatureMin)}° / ${weatherNumber(w.temperatureMax)}°` : "预报不可用"}<small class="weatherfacts">日出 ${w?.sunrise?.slice(11,16)||"—"} · 日落 ${w?.sunset?.slice(11,16)||"—"} · UV ${weatherNumber(w?.uvIndex)}</small></span><span>${Number.isFinite(w?.precipitationChance) ? Math.round(w.precipitationChance * 100) + "%" : "—"}</span><button onclick="selectDay(${i});switchPage('home')">详情</button></div>`;
       })
       .join(
         "",
       )}</div>${weatherAttribution()}<button class="pill" onclick="loadForecast(true)">刷新天气与海洋数据</button><p class="sub">无需Key，适用于当前5人非商业测试；免费接口有额度且无可用性保证。缺失日期/字段不补模拟值。当前值对应数据获取时间，远期预报存在不确定性。</p>`;
 };
+function compassDirection(v){if(!Number.isFinite(v))return '—';return ['北','北东北','东北','东东北','东','东东南','东南','南东南','南','南西南','西南','西西南','西','西西北','西北','北西北'][Math.round(((v%360+360)%360)/22.5)%16]+'风 '+Math.round(v)+'°';}
+function selectedWeatherHour(){const key=dateKey(dates[selected]);const current=selected===0?freeWeather?.current:null;const hour=current?.time?.slice(11,13)||'12';return {value:freeWeather?.hours.find(h=>h.time.startsWith(key+'T'+hour+':'))||null,hour};}
 renderMetrics = function () {
-  const d = weatherDay(),
-    c = selected === 0 ? freeWeather?.current : null;
-  document.getElementById("metrics").innerHTML = [
-    [
-      "最高 / 最低气温",
-      d
-        ? `${weatherNumber(d.temperatureMax)}° / ${weatherNumber(d.temperatureMin)}°`
-        : "—",
-    ],
-    [
-      "所获取时刻风速",
-      Number.isFinite(c?.windSpeed)
-        ? `${weatherNumber(c.windSpeed)} km/h`
-        : "—",
-    ],
-    [
-      "所获取时刻气压",
-      Number.isFinite(c?.pressure) ? `${weatherNumber(c.pressure)} hPa` : "—",
-    ],
-    [
-      "日降水概率",
-      Number.isFinite(d?.precipitationChance)
-        ? Math.round(d.precipitationChance * 100) + "%"
-        : "—",
-    ],
-  ]
-    .map(
-      ([name, value]) =>
-        `<div class="card metric"><div>${name}</div><div class="metricvalue">${value}</div><p class="sub">${freeWeather ? "Open-Meteo · 缺失显示 —" : "天气不可用 · 不填示例值"}</p></div>`,
-    )
-    .join("");
+ const d=weatherDay(),pick=selectedWeatherHour(),c=pick.value,key=dateKey(dates[selected]),p=weatherLocation(),fresh=['river','lake','reservoir','pond'].includes(p.type)||p.name.includes('杭州'),water=fresh?null:freeMarine?.hours.find(h=>h.time.startsWith(key+'T'+pick.hour+':'))?.waterTemperature;
+ const metrics=[
+ ['气温',c?.temperature,'°C','体感 '+weatherNumber(c?.apparentTemperature)+'°C'],
+ ['风速',c?.windSpeed,'km/h',compassDirection(c?.windDirection)+' · 来向'],
+ ['气压',c?.pressure,'hPa','海平面气压'],
+ ['降水概率',Number.isFinite(c?.precipitationChance)?c.precipitationChance*100:null,'%','选定小时预报'],
+ ['日出',null,'',d?.sunrise?.slice(11,16)||'—'],
+ ['日落',null,'',d?.sunset?.slice(11,16)||'—'],
+ ['紫外线',d?.uvIndex,'','当日最大UV指数'],
+ [fresh?'水温未接入':'海表水温',water,'°C',fresh?'河湖不套用海温':'模型海温 · 非现场实测']
+ ];
+ document.getElementById('metrics').innerHTML=metrics.map(([name,v,u,note])=>`<div class="card metric"><div class="metrichead">${name}</div><div class="metricvalue">${name==='日出'||name==='日落'?esc(note):weatherNumber(v)+(Number.isFinite(v)?' <small>'+u+'</small>':'')}</div><p class="sub">${name==='日出'||name==='日落'?'当地时间（UTC+8）':esc(note)}<br>${key} ${name==='日出'||name==='日落'||name==='紫外线'?'':pick.hour+':00'} · 缺失显示 —</p></div>`).join('');
 };
 renderHours = function () {
-  const rows =
-    freeWeather?.hours.filter((h) =>
-      h.time.startsWith(dateKey(dates[selected])),
-    ) || [];
-  document.getElementById("hours").innerHTML = rows.length
-    ? rows
-        .map(
-          (h) =>
-            `<div class="hour"><div>${esc(h.time.slice(11))}</div><div>${weatherNumber(h.temperature)}°C</div><div>${weatherNumber(h.windSpeed)} km/h</div><div>${Number.isFinite(h.precipitationChance) ? Math.round(h.precipitationChance * 100) + "%" : "—"}</div></div>`,
-        )
-        .join("")
-    : '<div class="empty">逐小时天气暂不可用，不显示模拟数值。</div>';
+ const rows=freeWeather?.hours.filter(h=>h.time.startsWith(dateKey(dates[selected])))||[];
+ document.getElementById('hours').innerHTML=rows.length?rows.map(h=>`<div class="hour"><div>${esc(h.time.slice(11))}</div><div>${weatherNumber(h.temperature)}° / 体感 ${weatherNumber(h.apparentTemperature)}°</div><div>${weatherNumber(h.windSpeed)}km/h · ${compassDirection(h.windDirection)}</div><div>${Number.isFinite(h.precipitationChance)?Math.round(h.precipitationChance*100)+'%':'—'}</div></div>`).join(''):'<div class="empty">逐小时天气暂不可用，不显示模拟数值。</div>';
 };
 renderTide = function () {
   document.getElementById("tidedate").textContent = fmt(dates[selected]);
@@ -279,7 +252,7 @@ renderTide = function () {
 };
 renderRecommend = function () {
   document.getElementById("recommend").innerHTML =
-    `<div class="eyebrow">PLAN YOUR NEXT CAST</div><h2>杭州的下一竿。</h2><p>${esc(weatherStateText())}。海平面模型不等于本地潮表；出钓计划由你手动安排。</p><button class="planbtn" onclick="addPlan()">加入当日出钓计划</button><button class="planbtn" onclick="switchPage('fish')">浏览鱼种库</button>`;
+    `<div class="eyebrow">PLAN YOUR NEXT CAST</div><h2>下一竿，先看条件。</h2><p>${esc(weatherStateText())}。站点潮汐请在左侧单独选择，鱼口条件可按鱼种逐小时查看。</p><button class="planbtn" onclick="addPlan()">加入当日出钓计划</button><button class="planbtn" onclick="switchPage('fish')">查看鱼种钓鱼指数</button>`;
 };
 const forecastCoreHome = renderHome;
 renderHome = function () {
@@ -288,8 +261,8 @@ renderHome = function () {
   document.querySelector(".bottominfo").textContent =
     "天气与海洋数据：Open-Meteo · 免费非商业API · 收藏和钓点仅存本机";
 };
-navs[1][2] = "10天天气";
-navs[2][2] = "鱼种库";
+navs[1][2] = "15天天气";
+navs[2][2] = "钓鱼指数";
 renderNav();
 renderHome();
 loadForecast();

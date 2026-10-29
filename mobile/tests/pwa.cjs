@@ -119,9 +119,9 @@ const { once } = require("node:events");
     for (const target of ["home", "weather", "fish", "spots"])
       await page.evaluate((p) => switchPage(p), target);
     await page.evaluate(() => switchPage("fish"));
-    assert.equal(await page.locator("#fishLibrary svg[role=img]").count(), 97);
+    assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 6);
     await page.evaluate(() => switchPage("home"));
-    assert.match(await page.locator("#tidecontent").innerText(), /不可用/);
+    assert.match(await page.locator("#tidecontent").innerText(), /选择潮位站|不可用/);
     assert.deepEqual(errors, []);
     assert.deepEqual(external, []);
     console.log(

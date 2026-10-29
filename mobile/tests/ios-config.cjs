@@ -24,6 +24,7 @@ for (const c of configurations) {
   const settings = objects.XCBuildConfiguration[c.value].buildSettings;
   assert.equal(settings.PRODUCT_BUNDLE_IDENTIFIER, config.appId);
   assert.ok(Number(settings.IPHONEOS_DEPLOYMENT_TARGET) >= 15);
+  assert.equal(String(settings.TARGETED_DEVICE_FAMILY).replaceAll('"',''), "1");
   assert.ok(fs.existsSync(path.join(root, "ios/App", settings.INFOPLIST_FILE)));
 }
 assert.equal(info.UIUserInterfaceStyle, "Dark");
@@ -45,6 +46,10 @@ for (const f of [
   "free-data.js",
   "map.js",
   "weather.js",
+  "tide-data.js",
+  "stations.js",
+  "bite-model.js",
+  "bite-ui.js",
 ])
   assert.deepEqual(
     fs.readFileSync(path.join(root, "www", f)),
