@@ -80,6 +80,14 @@ const { once } = require("node:events");
         temperature_2m_min: dayKeys.map((_, i) => 15 + i),
         temperature_2m_max: dayKeys.map((_, i) => 25 + i),
         precipitation_probability_max: dayKeys.map(() => 20),
+        sunrise: dayKeys.map(d=>d+'T06:00'),
+        sunset: dayKeys.map(d=>d+'T18:00'),
+      },
+      hourly: {
+        time: dayKeys.flatMap(d=>Array.from({length:24},(_,h)=>d+'T'+String(h).padStart(2,'0')+':00')),
+        temperature_2m: Array(15*24).fill(22),
+        wind_speed_10m: Array(15*24).fill(10),
+        weather_code: Array(15*24).fill(3),
       },
       current: {
         time: dayKeys[0] + "T12:00",
@@ -137,8 +145,9 @@ const { once } = require("node:events");
     assert.ok(labels);
     await page.getByLabel("鱼种", {exact:true}).selectOption("culter");
     assert.equal(await page.locator("#fishLibrary article").count(), 1);
-    assert.match(await page.locator("#fishLibrary").innerText(), /数据不足/);
-    await page.getByLabel("手动水温（情景输入）", {exact:true}).fill("22");
+    assert.match(await page.locator("#fishLibrary").innerText(), /天气条件较有利/);
+    assert.match(await page.locator("#fishLibrary").innerText(), /气温 22.0/);
+    assert.equal(await page.locator('#fish input[type=number]').count(),0);
     await page.getByLabel("鱼种", {exact:true}).selectOption("all");
     assert.equal(await page.locator("#fishLibrary article").count(), 12);
     await page.getByLabel("搜索鱼种或类群", {exact:true}).fill("石斑");
@@ -156,7 +165,8 @@ const { once } = require("node:events");
     await page.locator('#locations .locationoption').last().click();
     await page.waitForFunction(() => weatherState==='ready');
     assert.equal(await page.evaluate(() => weatherLocation().lng),102.1);
-    assert.equal(await page.getByLabel('手动水温（情景输入）',{exact:true}).inputValue(),'');
+    assert.match(await page.locator('#fishCount').innerText(),/同名测试/);
+    assert.match(await page.locator('#fishLibrary').innerText(),/本地天气规则自动计算/);
     await page.evaluate(() => openLocations());
     await page.getByLabel('城市、区县或乡镇', {exact:true}).fill('同名测试');
     await page.getByLabel('省级地区',{exact:true}).selectOption('浙江');
