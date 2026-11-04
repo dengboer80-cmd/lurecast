@@ -130,6 +130,24 @@ const { once } = require("node:events");
     await page.evaluate(() => switchPage("fish"));
     assert.equal(await page.locator("#fishLibrary article").count(), 12);
     assert.equal(await page.locator("#fishLibrary .fish3d[role=img]").count(), 12);
+    const orderAtDawn=await page.locator('#fishLibrary article').evaluateAll(rows=>rows.map(r=>r.dataset.fishId));
+    const checkDescending=async()=>{const scores=await page.locator('#fishLibrary article').evaluateAll(rows=>rows.map(r=>r.dataset.score===''?-1:Number(r.dataset.score)));assert.ok(scores.every((s,i)=>i===0||scores[i-1]>=s));};
+    await checkDescending();
+    for(const width of [320,375,390,430]){
+      await page.setViewportSize({width,height:844});
+      const boxes=await page.locator('#fishLibrary article').evaluateAll(rows=>rows.slice(0,5).map(r=>({x:r.getBoundingClientRect().x,y:r.getBoundingClientRect().y})));
+      assert.equal(new Set(boxes.slice(0,4).map(r=>r.y)).size,1,'four fish occupy one row at '+width);
+      assert.ok(boxes[4].y>boxes[0].y);
+      assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
+    }
+    await page.setViewportSize({width:390,height:844});
+    await page.getByLabel('比较时段',{exact:true}).selectOption('12');
+    await checkDescending();
+    assert.notDeepEqual(await page.locator('#fishLibrary article').evaluateAll(rows=>rows.map(r=>r.dataset.fishId)),orderAtDawn);
+    await page.locator('#fishLibrary .fishpick').nth(1).click();
+    const chosen=await page.locator('#fishLibrary .fishpick[aria-pressed=true] h2').innerText();
+    assert.equal(await page.locator('#fishDetail h2').innerText(),chosen);
+    await page.getByLabel('比较时段',{exact:true}).selectOption('6');
     assert.equal(await page.locator("#catchForm").count(), 0);
     assert.ok(!(await page.locator("#fish").innerText()).includes("我的鱼获"));
     const labels = await page
@@ -145,14 +163,27 @@ const { once } = require("node:events");
     assert.ok(labels);
     await page.getByLabel("鱼种", {exact:true}).selectOption("culter");
     assert.equal(await page.locator("#fishLibrary article").count(), 1);
-    assert.match(await page.locator("#fishLibrary").innerText(), /天气条件较有利/);
-    assert.match(await page.locator("#fishLibrary").innerText(), /气温 22.0/);
+    assert.match(await page.locator("#fishDetail").innerText(), /天气条件较有利/);
+    assert.match(await page.locator("#fishDetail").innerText(), /气温 22.0/);
     assert.equal(await page.locator('#fish input[type=number]').count(),0);
     await page.getByLabel("鱼种", {exact:true}).selectOption("all");
     assert.equal(await page.locator("#fishLibrary article").count(), 12);
     await page.getByLabel("搜索鱼种或类群", {exact:true}).fill("石斑");
     assert.equal(await page.locator("#fishLibrary article").count(), 4);
     await page.getByLabel("搜索鱼种或类群", {exact:true}).fill("");
+    await page.getByLabel('鱼种范围',{exact:true}).selectOption('all');
+    assert.match(await page.locator('#fishCount').innerText(),/97条候选/);
+    await page.getByLabel('搜索鱼种或类群',{exact:true}).fill('桂鱼');
+    assert.equal(await page.locator('#fishLibrary article').count(),1);
+    assert.equal(await page.locator('#fishLibrary h2').innerText(),'鳜');
+    await page.getByLabel('搜索鱼种或类群',{exact:true}).fill('');
+    await page.getByLabel('鱼种范围',{exact:true}).selectOption('china');
+    const lastOnPage=Number(await page.locator('#fishLibrary article').last().getAttribute('data-score'));
+    await page.getByRole('button',{name:'下一页',exact:true}).click();
+    assert.equal(await page.locator('#fishLibrary article').first().getAttribute('data-rank'),'13');
+    const nextScore=await page.locator('#fishLibrary article').first().getAttribute('data-score');
+    assert.ok(nextScore===''||Number(nextScore)<=lastOnPage);
+    await page.getByRole('button',{name:'上一页',exact:true}).click();
     await page.route("https://geocoding-api.open-meteo.com/**", r => json(r, {results: new URL(r.request().url()).searchParams.get('countryCode')==='CN' ? [
       {name:'同名测试',admin1:'浙江省',country_code:'CN',latitude:30.2,longitude:120.1,population:100},
       {name:'同名测试',admin1:'四川省',country_code:'CN',latitude:30.1,longitude:102.1}
@@ -166,7 +197,7 @@ const { once } = require("node:events");
     await page.waitForFunction(() => weatherState==='ready');
     assert.equal(await page.evaluate(() => weatherLocation().lng),102.1);
     assert.match(await page.locator('#fishCount').innerText(),/同名测试/);
-    assert.match(await page.locator('#fishLibrary').innerText(),/本地天气规则自动计算/);
+    assert.match(await page.locator('#fishDetail').innerText(),/本地天气规则自动计算/);
     await page.evaluate(() => openLocations());
     await page.getByLabel('城市、区县或乡镇', {exact:true}).fill('同名测试');
     await page.getByLabel('省级地区',{exact:true}).selectOption('浙江');
