@@ -24,7 +24,7 @@ function fishHourInputs(){
 function changeBitePage(delta){bitePage+=delta;biteDetailId=null;renderFishList();document.getElementById('fishLibrary').scrollIntoView({block:'start'});}
 function setBiteHour(hour){biteFocusHour=Number(hour);bitePage=0;biteDetailId=null;const select=document.getElementById('biteHourSelect');if(select)select.value=String(biteFocusHour);renderFishList();}
 function selectBiteDetail(id){biteDetailId=id;renderFishList();document.getElementById('fishDetail').scrollIntoView({block:'start',behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth'});}
-function fish3D(p){const cell=p.artIndex%15,col=cell%3,row=Math.floor(cell/3);return `<div class="fish3d species3d" data-fish="${p.id}" role="img" aria-label="${esc(p.name)}写实3D渲染插画" style="background-image:url('assets/fish-species-${Math.floor(p.artIndex/15)}.webp');background-position:${col*50}% ${row*25}%"></div>`;}
+function fish3D(p){const cell=p.artIndex%15,col=cell%3,row=Math.floor(cell/3);return `<div class="fish3d species3d" data-fish="${p.id}" role="img" aria-label="${esc(p.name)}写实3D渲染插画" style="background-image:url('assets/fish-species-${Math.floor(p.artIndex/15)}.webp');background-position:${col*50}% ${[1,24,47,69,93][row]}%"></div>`;}
 function fishDetail(row){
  if(!row)return '<p class="sub">没有匹配鱼种，请调整搜索或范围。</p>';
  const {profile:p,current,results,best}=row;
