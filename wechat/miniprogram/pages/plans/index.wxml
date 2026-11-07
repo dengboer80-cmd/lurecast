@@ -1,4 +1,17 @@
 <view class="page"><view class="title">我的出钓</view><view class="sub" wx:if="{{signedIn}}">已通过当前微信登录，计划和钓点保存在你的微信账号中。</view>
+<view wx:if="{{signedIn && profile}}" class="card row profile">
+ <image class="profile-avatar" src="{{profile.avatarPath}}" mode="aspectFill"/>
+ <text class="profile-name">{{profile.nickname}}</text>
+</view>
+<view wx:if="{{signedIn && profileError}}" class="sub">{{profileError}}<button disabled="{{busy}}" bindtap="retryProfile">重新加载微信资料</button></view>
+<form wx:if="{{signedIn && profileReady && !profile}}" class="card" bindsubmit="saveProfile">
+ <view>设置微信资料</view>
+ <view class="sub">首次保存的头像和昵称会存入你的 LureCast 账号，并在以后登录时显示。</view>
+ <image wx:if="{{avatarDraft}}" class="profile-avatar" src="{{avatarDraft}}" mode="aspectFill"/>
+ <button open-type="chooseAvatar" bindchooseavatar="chooseAvatar" disabled="{{busy}}">选择微信头像</button>
+ <input class="input" name="nickname" type="nickname" value="{{nicknameDraft}}" bindblur="nicknameChange" maxlength="64" placeholder="点击输入框选择微信昵称" disabled="{{busy}}"/>
+ <button class="primary" form-type="submit" disabled="{{busy}}">保存头像和昵称</button>
+</form>
 <button wx:if="{{signedIn}}" disabled="{{busy}}" bindtap="logout">退出同步，查看本机记录</button>
 <view class="sub" wx:else>微信登录后，新建的计划和钓点可跨设备查看。已有本机记录可在退出同步后查看。</view>
 <button wx:if="{{!signedIn}}" class="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="login">微信登录</button>

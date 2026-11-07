@@ -2,13 +2,16 @@ const S=require('../../lib/state');
 const A=require('../../lib/account');
 
 Page({
- data:{plans:[],signedIn:false,busy:false,loadError:''},
+ data:{plans:[],signedIn:false,busy:false,loadError:'',profile:null,profileReady:false,profileError:'',avatarDraft:'',nicknameDraft:''},
  onShow(){return this.refresh();},
  async refresh(){
   const signedIn=A.signedIn();
   this.setData({signedIn,plans:signedIn?[]:S.plans(),loadError:''});
-  if(!signedIn)return;
-  return this.run(async()=>this.setData({plans:await A.list('plans')}),true);
+  if(!signedIn){this.setData({profile:null,profileReady:false,profileError:'',avatarDraft:'',nicknameDraft:''});return;}
+  return this.run(async()=>{
+   await this.loadProfile();
+   this.setData({plans:await A.list('plans')});
+  },true);
  },
  async run(task,loading=false){
   if(this.data.busy)return;
@@ -23,6 +26,28 @@ Page({
   return this.run(async()=>{
    const plans=await A.login();
    this.setData({signedIn:true,plans,loadError:''});
+   await this.loadProfile();
+  });
+ },
+ async loadProfile(){
+  this.setData({profileReady:false,profileError:''});
+  try{this.setData({profile:await A.getProfile(),profileReady:true});}
+  catch(e){this.setData({profile:null,profileError:e.message||'微信资料加载失败'});}
+ },
+ retryProfile(){return this.run(()=>this.loadProfile());},
+ chooseAvatar(e){
+  const avatarDraft=e.detail.avatarUrl;
+  if(avatarDraft)this.setData({avatarDraft});
+ },
+ nicknameChange(e){this.setData({nicknameDraft:e.detail.value});},
+ saveProfile(e){
+  if(!this.data.signedIn||!this.data.profileReady||this.data.profile)return;
+  const nickname=String(e.detail.value.nickname||'').trim(),avatar=this.data.avatarDraft;
+  if(!nickname||!avatar)return wx.showToast({title:'请先选择头像并填写昵称',icon:'none'});
+  return this.run(async()=>{
+   const profile=await A.createProfile(nickname,avatar);
+   this.setData({profile,avatarDraft:'',nicknameDraft:''});
+   wx.showToast({title:'微信资料已保存'});
   });
  },
  logout(){
