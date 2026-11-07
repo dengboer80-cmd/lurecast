@@ -1,0 +1,10 @@
+{
+  "name": "lurecast-wechat",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "prepare": "node scripts/prepare.cjs",
+    "test": "npm run prepare && node --test tests/*.test.cjs",
+    "check:release": "node scripts/check-release.cjs"
+  }
+}

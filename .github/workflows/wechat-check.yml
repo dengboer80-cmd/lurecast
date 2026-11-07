@@ -1,0 +1,31 @@
+name: Validate WeChat project (no upload or publish)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "wechat/**"
+      - "mobile/scripts/**"
+      - "mobile/data/tides/**"
+      - "mobile/assets/fish-species-*.webp"
+      - ".github/workflows/wechat-check.yml"
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+      - name: Validate native source, weather rules, storage and package budgets
+        run: npm test --prefix wechat
+      - name: Package source for manual WeChat Developer Tools import
+        run: node wechat/scripts/package.cjs
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LureCast-WeChat-0.1.0-source
+          path: wechat-output/LureCast-WeChat-0.1.0.zip
+      - name: Explain release status
+        run: echo 'Engineering checks only. No WeChat account login, upload, review submission or production release is performed by this workflow.'

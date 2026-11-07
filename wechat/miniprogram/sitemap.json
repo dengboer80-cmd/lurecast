@@ -1,0 +1,1 @@
+{"desc":"仅开放产品主页，位置搜索与本机记录页面不参与索引","rules":[{"action":"allow","page":"pages/home/index"},{"action":"disallow","page":"*"}]}
