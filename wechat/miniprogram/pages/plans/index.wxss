@@ -1,3 +1,11 @@
 .profile{justify-content:flex-start;gap:22rpx}
 .profile-avatar{display:block;width:96rpx;height:96rpx;border-radius:50%;flex-shrink:0}
 .profile-name{font-size:34rpx;font-weight:650;min-width:0;overflow-wrap:anywhere}
+
+.plans-page .section-heading { margin: 10rpx 0 26rpx; }
+.profile { min-height: 150rpx; }
+.profile-avatar { width: 106rpx; height: 106rpx; }
+.plan-place { font-size: 34rpx; font-weight: 600; }
+.plan-date { margin: 8rpx 0 24rpx; color: #c5f765; }
+.plan-card .row button { flex: 1; min-width: 0; }
+.plan-card textarea { min-height: 150rpx; }

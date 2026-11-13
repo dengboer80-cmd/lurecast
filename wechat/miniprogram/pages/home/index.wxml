@@ -1,1 +1,78 @@
-<view class="page"><view class="row"><view class="brand">LureCast.</view><button size="mini" bindtap="locations">{{place.name}} ⌄</button></view><view class="eyebrow">YOUR NEXT CAST STARTS HERE</view><view class="title">等一场好潮，<text class="green">去野。</text></view><view class="sub">未来15天天气 · 真实站点潮表 · 当地鱼种条件参考</view><scroll-view class="dates" scroll-x><view wx:for="{{days}}" wx:key="date" class="day {{item.selected?'selected':''}}" bindtap="selectDate" data-date="{{item.date}}"><text>{{item.label}}</text><text class="small">{{item.temperature}}</text></view></scroll-view><view wx:if="{{loading}}" class="sub">正在获取天气…</view><view wx:if="{{error}}" class="card"><view class="sub">{{error}}</view><button bindtap="retry">重新获取天气</button></view><button class="primary" bindtap="fish">查看鱼种钓鱼指数</button><view class="row"><button bindtap="tides">选择官方潮汐站点</button><button bindtap="addPlan">加入出钓计划</button></view><view class="metrics"><view class="card metric" wx:for="{{metrics}}" wx:key="name"><view class="sub">{{item.name}}</view><view class="value">{{item.value}}</view><view class="sub">{{item.note}}</view></view></view><view class="sub">{{date}} · 北京时间 · 缺失显示 —<text wx:if="{{updated}}"> · 获取于 {{updated}}</text></view><view class="sub">天气：Open-Meteo · CC BY 4.0 · 免费接口仅限非商业使用</view><button bindtap="about">数据来源与隐私说明</button></view>
+<view class="page home-page">
+  <view class="home-header">
+    <button class="icon-button" bindtap="locations" aria-label="搜索出钓地点">
+      <view class="search-symbol"></view>
+    </button>
+    <button class="location-button" bindtap="locations">
+      <text class="location-caption">出钓地点</text>
+      <text class="location-name">{{place.name}} ⌄</text>
+    </button>
+    <button class="account-button" bindtap="plans" aria-label="我的出钓">我</button>
+  </view>
+
+  <view class="section-heading">
+    <view>
+      <view class="eyebrow">LURECAST · 路亚天气</view>
+      <view class="section-title">下一竿，去哪里？</view>
+    </view>
+    <button class="text-button" bindtap="locations">换个地点 ↗</button>
+  </view>
+
+  <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="{{false}}">
+    <view class="category-list">
+      <button class="category-chip selected" bindtap="weather"><text class="chip-icon">☀</text>天气预报</button>
+      <button class="category-chip" bindtap="tides"><text class="chip-icon">≈</text>潮汐站点</button>
+      <button class="category-chip" bindtap="fish"><text class="chip-icon">↗</text>鱼种指数</button>
+      <button class="category-chip" bindtap="plans"><text class="chip-icon">＋</text>我的出钓</button>
+    </view>
+  </scroll-view>
+
+  <view class="cast-banner">
+    <view class="banner-copy">
+      <view class="banner-kicker">{{date}} · {{place.type==='sea'?'沿海':'淡水'}}</view>
+      <view class="banner-title">等一场好潮，<text class="green">去野。</text></view>
+      <view class="banner-note">根据当地天气，看看先钓哪种鱼。</view>
+      <button class="banner-link" bindtap="fish">查看鱼种指数 <text>↗</text></button>
+    </view>
+    <image class="banner-fish" src="/assets/fish/fish-0.jpg" mode="aspectFit"/>
+  </view>
+
+  <view class="section-heading weather-heading">
+    <view class="section-title">出钓气象</view>
+    <button class="text-button" bindtap="weather">未来15天 ↗</button>
+  </view>
+  <scroll-view class="dates" scroll-x enhanced show-scrollbar="{{false}}">
+    <view wx:for="{{days}}" wx:key="date" class="day {{item.selected?'selected':''}}" bindtap="selectDate" data-date="{{item.date}}">
+      <text>{{item.label}}</text>
+      <text class="small">{{item.temperature}}</text>
+    </view>
+  </scroll-view>
+
+  <view wx:if="{{loading}}" class="sub">正在获取天气…</view>
+  <view wx:if="{{error}}" class="card status-card">
+    <view class="sub">{{error}}</view>
+    <button bindtap="retry">重新获取天气</button>
+  </view>
+
+  <view class="metrics">
+    <view class="card metric" wx:for="{{metrics}}" wx:key="name">
+      <view class="metric-top">
+        <text class="metric-label">{{item.name}}</text>
+        <text class="metric-mark">＋</text>
+      </view>
+      <view class="value">{{item.value}}</view>
+      <view class="metric-note">{{item.note}}</view>
+    </view>
+  </view>
+
+  <view class="save-plan">
+    <view>
+      <view class="save-title">留一个出发的理由</view>
+      <view class="sub">{{place.name}} · {{date}}</view>
+    </view>
+    <button class="primary" bindtap="addPlan">加入计划 ＋</button>
+  </view>
+  <view class="source-note">{{date}} · 北京时间 · 缺失显示 —<text wx:if="{{updated}}"> · 获取于 {{updated}}</text></view>
+  <view class="source-note">天气：Open-Meteo · CC BY 4.0 · 免费接口仅限非商业使用</view>
+  <button class="footer-link" bindtap="about">数据来源与隐私说明 ↗</button>
+</view>

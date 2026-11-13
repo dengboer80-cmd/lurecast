@@ -1,0 +1,10 @@
+.fish-page { padding-top: 20rpx; }
+.place-link { padding-left: 0; margin: 6rpx 0 18rpx; }
+.fish-page .input { font-size: 25rpx; margin-bottom: 24rpx; }
+.fish-filters { gap: 12rpx; margin-bottom: 26rpx; }
+.fish-filters .label { margin: 0 0 10rpx; font-size: 21rpx; }
+.fish-filters .picker { border-radius: 40rpx; padding: 14rpx 20rpx; min-height: 64rpx; font-size: 22rpx; }
+.fish-page .grid { margin-top: 22rpx; }
+.fish-page .fishname { font-size: 20rpx; }
+.fish-page .score { font-size: 35rpx; margin-top: 6rpx; }
+.fish-page .title { font-size: 36rpx; margin-top: 0; }

@@ -1,0 +1,7 @@
+.forecast-page { padding-top: 20rpx; }
+.forecast-list { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 16rpx; margin-top: 24rpx; }
+.forecast-card { margin: 0; min-width: 0; padding: 24rpx 20rpx; }
+.forecast-date { font-size: 23rpx; color: #b9c9bb; }
+.forecast-temperature { font-size: 34rpx; font-weight: 600; margin: 28rpx 0; overflow-wrap: anywhere; }
+.forecast-bottom { display: flex; justify-content: space-between; gap: 6rpx; font-size: 19rpx; }
+.forecast-meta { font-size: 19rpx; color: #8c9c91; line-height: 1.8; margin-top: 16rpx; }

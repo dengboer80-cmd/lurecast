@@ -1,0 +1,40 @@
+.home-page { padding-top: 12rpx; }
+.home-header { display: flex; align-items: center; justify-content: space-between; margin: 0 0 36rpx; }
+.home-header button { margin: 0; }
+.icon-button { width: 78rpx; min-height: 78rpx; padding: 22rpx; border: 0; background: transparent; }
+.search-symbol { width: 30rpx; height: 30rpx; border: 3rpx solid #99aa9e; border-radius: 50%; position: relative; }
+.search-symbol::after { content: ""; width: 15rpx; height: 3rpx; background: #99aa9e; position: absolute; right: -11rpx; bottom: -5rpx; transform: rotate(45deg); }
+.location-button { max-width: 65%; min-height: 78rpx; padding: 0 12rpx; background: transparent; border: 0; border-radius: 0; }
+.location-button text { display: block; }
+.location-caption { color: #99aa9e; font-size: 20rpx; line-height: 1.6; }
+.location-name { font-size: 28rpx; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.account-button { width: 66rpx; min-height: 66rpx; padding: 10rpx 0; border-radius: 50%; color: #c5f765; background: #101813; border-color: #38483d; }
+.category-scroll { width: 100%; margin: 24rpx 0; white-space: nowrap; }
+.category-list { display: inline-flex; gap: 12rpx; padding-right: 12rpx; }
+.category-chip { display: inline-flex; align-items: center; gap: 10rpx; min-height: 66rpx; margin: 0; padding: 12rpx 22rpx; border-radius: 40rpx; font-size: 24rpx; border-color: #283128; background: #080b09; }
+.category-chip.selected { color: #c5f765; border-color: #38483d; background: #101813; }
+.chip-icon { font-size: 30rpx; line-height: 1; }
+.cast-banner { position: relative; overflow: hidden; border-radius: 38rpx; background: #080b09; border: 1rpx solid #283128; min-height: 300rpx; padding: 30rpx; }
+.banner-copy { position: relative; z-index: 1; width: 66%; }
+.banner-kicker { font-size: 20rpx; color: #99aa9e; margin-bottom: 20rpx; }
+.banner-title { font-size: 38rpx; font-weight: 650; line-height: 1.5; max-width: 290rpx; }
+.banner-note { font-size: 22rpx; color: #99aa9e; line-height: 1.7; margin: 10rpx 0 20rpx; max-width: 290rpx; }
+.banner-fish { position: absolute; right: -36rpx; top: 76rpx; width: 310rpx; height: 210rpx; transform: rotate(-23deg); }
+.banner-link { display: inline-flex; align-items: center; gap: 18rpx; min-height: 60rpx; margin: 0; padding: 10rpx 20rpx; border: 0; background: #c5f765; color: #10180a; border-radius: 36rpx; font-size: 22rpx; }
+.weather-heading { margin-top: 36rpx; }
+.dates { margin: 20rpx 0 26rpx; }
+.day { min-width: 142rpx; border-radius: 26rpx; padding: 16rpx 14rpx; }
+.day .small { font-size: 20rpx; }
+.metric { border-radius: 34rpx; padding: 24rpx; min-height: 218rpx; }
+.metric-top { display: flex; justify-content: space-between; align-items: center; }
+.metric-label { font-size: 24rpx; color: #b9c9bb; }
+.metric-mark { color: #38483d; font-size: 26rpx; }
+.metric .value { margin: 28rpx 0 14rpx; font-size: 42rpx; letter-spacing: -1rpx; }
+.metric-note { color: #99aa9e; font-size: 21rpx; line-height: 1.6; }
+.save-plan { display: flex; align-items: center; justify-content: space-between; gap: 16rpx; padding: 28rpx 0; margin-top: 8rpx; }
+.save-title { font-size: 28rpx; }
+.save-plan .sub { margin: 6rpx 0 0; font-size: 21rpx; }
+.save-plan button { flex-shrink: 0; min-height: 70rpx; padding: 14rpx 20rpx; font-size: 23rpx; border-radius: 40rpx; }
+.source-note { color: #8c9c91; font-size: 19rpx; line-height: 1.8; margin-bottom: 8rpx; }
+.footer-link { text-align: left; min-height: 60rpx; padding: 12rpx 0; background: transparent; border: 0; color: #99aa9e; font-size: 21rpx; }
+.status-card .sub { overflow-wrap: anywhere; }

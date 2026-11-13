@@ -1,4 +1,6 @@
-<view class="page"><view class="title">我的出钓</view><view class="sub" wx:if="{{signedIn}}">已通过当前微信登录，计划和钓点保存在你的微信账号中。</view>
+<view class="page plans-page">
+<view class="eyebrow">LURECAST · MY CASTS</view>
+<view class="section-heading"><view class="section-title">我的出钓</view><text class="small green">{{plans.length}} 个计划</text></view><view class="sub" wx:if="{{signedIn}}">已通过当前微信登录，计划和钓点保存在你的微信账号中。</view>
 <view wx:if="{{signedIn && profile}}" class="card row profile">
  <image class="profile-avatar" src="{{profile.avatarPath}}" mode="aspectFill"/>
  <text class="profile-name">{{profile.nickname}}</text>
@@ -18,4 +20,4 @@
 <button bindtap="points" disabled="{{busy}}">{{signedIn?'我的钓点':'本机钓点记录'}}</button>
 <view wx:if="{{loadError}}" class="sub">{{loadError}}<button bindtap="refresh">重新加载</button></view>
 <view wx:if="{{!busy && !loadError && !plans.length}}" class="empty">暂无出钓计划，请在首页选择地点和日期后添加。</view>
-<view class="card" wx:for="{{plans}}" wx:key="id"><view>{{item.place.name}} · {{item.date}}</view><view class="label">出发时间</view><picker mode="time" value="{{item.time}}" data-id="{{item.id}}" data-field="time" bindchange="edit"><view class="picker">{{item.time}}</view></picker><textarea class="input" value="{{item.note}}" data-id="{{item.id}}" data-field="note" maxlength="300" placeholder="出钓备注" bindinput="edit"/><button class="primary" disabled="{{busy}}" bindtap="save" data-id="{{item.id}}">保存计划</button><view class="row"><button bindtap="weather" data-id="{{item.id}}">查看天气</button><button disabled="{{busy}}" bindtap="remove" data-id="{{item.id}}">移除</button></view></view><button bindtap="about">数据与隐私</button></view>
+<view class="card plan-card" wx:for="{{plans}}" wx:key="id"><view class="plan-place">{{item.place.name}}</view><view class="sub plan-date">{{item.date}}</view><view class="label">出发时间</view><picker mode="time" value="{{item.time}}" data-id="{{item.id}}" data-field="time" bindchange="edit"><view class="picker">{{item.time}}</view></picker><textarea class="input" value="{{item.note}}" data-id="{{item.id}}" data-field="note" maxlength="300" placeholder="出钓备注" bindinput="edit"/><button class="primary" disabled="{{busy}}" bindtap="save" data-id="{{item.id}}">保存计划</button><view class="row"><button bindtap="weather" data-id="{{item.id}}">查看天气</button><button disabled="{{busy}}" bindtap="remove" data-id="{{item.id}}">移除</button></view></view><button bindtap="about">数据与隐私</button></view>

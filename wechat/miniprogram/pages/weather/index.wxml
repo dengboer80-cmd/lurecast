@@ -1,1 +1,18 @@
-<view class="page"><view class="title">未来15天天气</view><button bindtap="locations">{{place.name}} · 选择全国地点 ↗</button><view wx:if="{{loading}}" class="sub">天气加载中…</view><view wx:if="{{error}}" class="sub">{{error}}</view><view class="card"><view class="trend" wx:for="{{rows}}" wx:key="date" bindtap="detail" data-date="{{item.date}}"><view>{{item.date}}</view><view>{{item.temp}}<view class="sub">日出 {{item.sunrise}} · 日落 {{item.sunset}} · UV {{item.uv}}</view></view><view class="small">{{item.rain}} ↗</view></view></view><view class="sub">降水概率 · 数据来自Open-Meteo · 远期预报存在不确定性，不补模拟数据。</view></view>
+<view class="page forecast-page">
+ <view class="section-heading">
+  <view><view class="eyebrow">FORECAST · 出钓日历</view><view class="section-title">未来15天天气</view></view>
+  <button class="text-button" bindtap="locations">{{place.name}} ⌄</button>
+ </view>
+ <view class="sub">选一个日期，查看当天的出钓天气。</view>
+ <view wx:if="{{loading}}" class="sub">天气加载中…</view>
+ <view wx:if="{{error}}" class="sub">{{error}}</view>
+ <view class="forecast-list">
+  <view class="card forecast-card" wx:for="{{rows}}" wx:key="date" bindtap="detail" data-date="{{item.date}}">
+   <view class="forecast-date">{{item.date}}</view>
+   <view class="forecast-temperature">{{item.temp}}</view>
+   <view class="forecast-bottom"><text>降水 {{item.rain}}</text><text class="green">查看当天 ↗</text></view>
+   <view class="forecast-meta">日出 {{item.sunrise}} · 日落 {{item.sunset}} · UV {{item.uv}}</view>
+  </view>
+ </view>
+ <view class="sub">降水概率 · 数据来自Open-Meteo · 远期预报存在不确定性，不补模拟数据。</view>
+</view>
