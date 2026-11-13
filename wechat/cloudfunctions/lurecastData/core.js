@@ -13,7 +13,7 @@ function getJSON(url){
    reject(sourceError('SOURCE_FORBIDDEN','不允许的数据服务'));
    return;
   }
-  let settled=false;
+  let settled=false,phase='DNS';
   const finish=(error,data)=>{
    if(settled)return;
    settled=true;
@@ -21,9 +21,10 @@ function getJSON(url){
    if(error)reject(error);else resolve(data);
   };
   const deadline=setTimeout(()=>{
-   req.destroy(sourceError('SOURCE_TIMEOUT','数据源超时'));
-  },7000);
-  const req=https.get(target,{headers:{Accept:'application/json','Accept-Encoding':'identity'}},res=>{
+   const error=sourceError('SOURCE_TIMEOUT','数据源超时');error.phase=phase;req.destroy(error);
+  },10000);
+  const req=https.get(target,{family:4,headers:{Accept:'application/json','Accept-Encoding':'identity'}},res=>{
+   phase='READ';
    if(res.statusCode!==200){
     res.resume();
     finish(sourceError('SOURCE_HTTP_'+res.statusCode,'数据源返回 '+res.statusCode));
@@ -45,6 +46,11 @@ function getJSON(url){
    res.on('error',finish);
    res.on('aborted',()=>finish(sourceError('ECONNRESET','数据源连接中断')));
   });
+  req.on('socket',socket=>{
+   socket.once('lookup',error=>{if(!error)phase='CONNECT';});
+   socket.once('connect',()=>{phase='TLS';});
+   socket.once('secureConnect',()=>{phase='RESPONSE';});
+  });
   req.on('error',finish);
  });
 }
@@ -65,6 +71,8 @@ function weatherFailure(error){
  else if(code==='SOURCE_HTTP_400')message='天气接口请求参数被拒绝，请联系开发者';
  else if(code==='SOURCE_HTTP_401'||code==='SOURCE_HTTP_403')message='天气接口拒绝访问，请核对数据服务授权';
  else if(code==='SOURCE_FORMAT')message='天气接口返回格式异常，请稍后重试';
+ const phases={DNS:'域名解析',CONNECT:'建立连接',TLS:'HTTPS握手',RESPONSE:'等待响应',READ:'读取数据'};
+ if(code==='SOURCE_TIMEOUT'&&phases[error.phase])message+='，超时阶段：'+phases[error.phase];
  return sourceError(code,message+'（'+String(code).replace(/[^A-Za-z0-9_]/g,'').slice(0,48)+'）');
 }
 function createService({context,fetchJSON=getJSON,now=Date.now,enabled=()=>process.env.ENABLE_PUBLIC_WEATHER==='true'}){

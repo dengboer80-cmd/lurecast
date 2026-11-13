@@ -19,7 +19,7 @@ function serviceError(value){
 }
 function call(action,params){
  if(!getApp().globalData.cloudReady)return Promise.reject(Error('尚未配置云开发环境，注册小程序后填写AppID与环境ID并部署云函数'));
- let timer;return Promise.race([wx.cloud.callFunction({name:config.functionName,data:{action,...params}}).then(r=>{if(!r.result||r.result.error)throw serviceError(r.result&&r.result.error);return r.result;}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('数据请求超时，请稍后刷新')),20000);})]).finally(()=>clearTimeout(timer));
+ let timer;return Promise.race([wx.cloud.callFunction({name:config.functionName,data:{action,...params}}).then(r=>{if(!r.result||r.result.error)throw serviceError(r.result&&r.result.error);return r.result;}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('数据请求超时，请稍后刷新')),35000);})]).finally(()=>clearTimeout(timer));
 }
 async function load(force=false){
  const id=++requestId,p={...state.place},k=F.locationKey(p)+':'+p.type,cached=cache.get(k);
