@@ -21,7 +21,7 @@
   <scroll-view class="category-scroll" scroll-x enhanced show-scrollbar="{{false}}">
     <view class="category-list">
       <button class="category-chip selected" bindtap="weather"><text class="chip-icon">☀</text>天气预报</button>
-      <button class="category-chip" bindtap="tides"><text class="chip-icon">≈</text>潮汐站点</button>
+      <button class="category-chip" bindtap="tides"><text class="chip-icon">≈</text><view>潮汐站点<text class="tide-chip-note">抱歉 仅有免费站点</text></view></button>
       <button class="category-chip" bindtap="fish"><text class="chip-icon">↗</text>鱼种指数</button>
       <button class="category-chip" bindtap="plans"><text class="chip-icon">＋</text>我的出钓</button>
     </view>

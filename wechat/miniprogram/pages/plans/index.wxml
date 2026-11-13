@@ -17,7 +17,7 @@
 <button wx:if="{{signedIn}}" disabled="{{busy}}" bindtap="logout">退出同步，查看本机记录</button>
 <view class="sub" wx:else>微信登录后，新建的计划和钓点可跨设备查看。已有本机记录可在退出同步后查看。</view>
 <button wx:if="{{!signedIn}}" class="primary" loading="{{busy}}" disabled="{{busy}}" bindtap="login">微信登录</button>
-<button bindtap="points" disabled="{{busy}}">{{signedIn?'我的钓点':'本机钓点记录'}}</button>
+<button wx:if="{{signedIn}}" bindtap="points" disabled="{{busy}}">我的钓点</button>
 <button class="primary" bindtap="record" disabled="{{busy}}">＋ 记录一次出钓</button><view class="card"><view>我的实钓记录</view><view class="green sub">已复盘 {{stats.count}} 次 · 有口 {{stats.contacts}} 次 · 有中鱼 {{stats.caught}} 次</view><view class="sub">未确认鱼口 {{stats.unknown}} 次 · 累计 {{stats.hours}} 小时 · {{stats.note}}</view><view class="sub" wx:for="{{stats.groups}}" wx:key="key">{{item.name}} · {{item.fish}}：{{item.count}}次记录，有口{{item.contacts}}次，{{item.hours}}小时</view></view>
 <view wx:if="{{loadError}}" class="sub">{{loadError}}<button bindtap="refresh">重新加载</button></view>
 <view wx:if="{{!busy && !loadError && !plans.length}}" class="empty">暂无出钓计划，请在首页选择地点和日期后添加。</view>

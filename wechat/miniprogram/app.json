@@ -32,7 +32,7 @@
     "list": [
       {
         "pagePath": "pages/home/index",
-        "text": "潮汐天气"
+        "text": "路亚天气"
       },
       {
         "pagePath": "pages/weather/index",
