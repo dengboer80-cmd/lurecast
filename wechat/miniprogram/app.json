@@ -1,10 +1,61 @@
 {
-  "pages": ["pages/home/index", "pages/weather/index", "pages/fish/index", "pages/plans/index", "pages/locations/index", "pages/points/index", "pages/about/index"],
-  "subPackages": [{"root": "packages/tides", "pages": ["index"]}],
-  "window": {"navigationBarTitleText": "LureCast", "navigationBarBackgroundColor": "#000000", "navigationBarTextStyle": "white", "backgroundColor": "#000000", "backgroundTextStyle": "dark"},
-  "tabBar": {"color": "#8c9c91", "selectedColor": "#c5f765", "backgroundColor": "#080b09", "borderStyle": "black", "list": [{"pagePath": "pages/home/index", "text": "潮汐天气"}, {"pagePath": "pages/weather/index", "text": "15天天气"}, {"pagePath": "pages/fish/index", "text": "钓鱼指数"}, {"pagePath": "pages/plans/index", "text": "我的出钓"}]},
-  "permission": {"scope.userLocation": {"desc": "仅在点击定位时获取位置，用于查询附近天气和鱼种条件参考"}},
-  "requiredPrivateInfos": ["getLocation"],
+  "pages": [
+    "pages/home/index",
+    "pages/weather/index",
+    "pages/fish/index",
+    "pages/plans/index",
+    "pages/locations/index",
+    "pages/points/index",
+    "pages/about/index",
+    "pages/record/index"
+  ],
+  "subPackages": [
+    {
+      "root": "packages/tides",
+      "pages": [
+        "index"
+      ]
+    }
+  ],
+  "window": {
+    "navigationBarTitleText": "LureCast",
+    "navigationBarBackgroundColor": "#000000",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#000000",
+    "backgroundTextStyle": "dark"
+  },
+  "tabBar": {
+    "color": "#8c9c91",
+    "selectedColor": "#c5f765",
+    "backgroundColor": "#080b09",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/index",
+        "text": "潮汐天气"
+      },
+      {
+        "pagePath": "pages/weather/index",
+        "text": "15天天气"
+      },
+      {
+        "pagePath": "pages/fish/index",
+        "text": "钓鱼指数"
+      },
+      {
+        "pagePath": "pages/plans/index",
+        "text": "我的出钓"
+      }
+    ]
+  },
+  "permission": {
+    "scope.userLocation": {
+      "desc": "仅在点击定位时获取位置，用于查询附近天气和鱼种条件参考"
+    }
+  },
+  "requiredPrivateInfos": [
+    "getLocation"
+  ],
   "usingComponents": {},
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

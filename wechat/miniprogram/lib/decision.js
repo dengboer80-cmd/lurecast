@@ -44,9 +44,9 @@ function snapshot(recommendation,weather,date){
 }
 function stats(plans){
  const done=plans.filter(p=>p.review),groups=new Map();
- for(const p of done){const k=JSON.stringify([p.place.lat,p.place.lng,p.place.type,p.review.targetId]);const fish=profiles.find(f=>f.id===p.review.targetId);const g=groups.get(k)||{key:k,name:p.place.name,fish:fish?fish.name:'未识别鱼种',count:0,contacts:0,minutes:0};g.count++;g.contacts+=p.review.contact==='yes'?1:0;g.minutes+=p.review.minutes;groups.set(k,g);}
+ for(const p of done){const k=JSON.stringify([p.place.lat,p.place.lng,p.place.type,p.review.targetName||p.review.targetId]);const fish=profiles.find(f=>f.id===p.review.targetId);const g=groups.get(k)||{key:k,name:p.place.name,fish:p.review.targetName||(fish?fish.name:'未识别鱼种'),count:0,contacts:0,minutes:0};g.count++;g.contacts+=p.review.contact==='yes'?1:0;g.minutes+=p.review.minutes;groups.set(k,g);}
  const hours=done.reduce((s,p)=>s+p.review.minutes/60,0);
- return {groups:[...groups.values()].map(g=>({...g,hours:Math.round(g.minutes/6)/10})),unknown:done.filter(p=>p.review.contact==='unknown').length,count:done.length,contacts:done.filter(p=>p.review.contact==='yes').length,caught:done.filter(p=>p.review.caught>0).length,hours:Math.round(hours*10)/10,
+ return {groups:[...groups.values()].map(g=>({...g,hours:Math.round(g.minutes/6)/10})),unknown:done.filter(p=>p.review.contact==='unknown').length,count:done.length,contacts:done.filter(p=>p.review.contact==='yes').length,caught:done.filter(p=>p.review.hooked||p.review.caught>0).length,hours:Math.round(hours*10)/10,
  note:done.length<10?'样本较少，仅展示个人记录，不推断中鱼概率。':'个人记录受钓点、时长和技巧影响，不代表推荐准确率。'};
 }
 module.exports={waters,species,candidates,approach,explain,recommend,snapshot,stats};

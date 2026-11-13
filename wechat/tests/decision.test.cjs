@@ -78,3 +78,16 @@ test('guest point edits roundtrip species and guest reviews persist without chan
  assert.equal(p.data.stats.count,1);assert.equal(p.data.stats.hours,1);assert.equal(S.plans()[0].review.caught,0);assert.equal(S.plans()[0].time,'06:00');assert.equal(S.plans()[0].snapshot.fish,'鳜');
  await p.onShow();assert.equal(p.data.stats.count,1);
 });
+
+test('cloud independent trips accept custom fish and weather while allowing same-day sessions without cross-account reads',async()=>{
+ const call=createRecords(database());
+ const review={targetName:'本地鱼',fishType:'俗名',minutes:120,contact:'yes',hooked:true,caught:null,bait:'亮片'};
+ const record={entryId:'trip-session-one',place,date:'2026-11-13',time:'09:20',review,weather:{source:'manual',date:'2026-11-13',time:'09:20',observed:'晴，微风'}};
+ assert.ok((await call({kind:'plans',operation:'add',record},'a')).ok);
+ assert.ok((await call({kind:'plans',operation:'add',record:{...record,entryId:'trip-session-two'}},'a')).ok);
+ const list=await call({kind:'plans',operation:'list'},'a');assert.equal(list.items.length,2);assert.equal(list.items[0].review.hooked,true);assert.equal(list.items[0].review.caught,null);assert.equal(list.items[0].weather.observed,'晴，微风');assert.equal(list.items[0].time,'09:20');
+ assert.deepEqual((await call({kind:'plans',operation:'list'},'b')).items,[]);
+ assert.ok((await call({kind:'plans',operation:'review',id:list.items[0].id,record:{...review,minutes:60}},'b')).error);
+ assert.ok((await call({kind:'plans',operation:'review',id:list.items[0].id,record:{...review,minutes:60}},'a')).ok);
+ assert.ok((await call({kind:'plans',operation:'add',record:{...record,entryId:'invalid-id'}},'a')).error);
+});

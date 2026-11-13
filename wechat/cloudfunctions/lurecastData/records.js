@@ -32,8 +32,15 @@ function createRecords(db){
     if(!point)return invalid('地点或坐标无效');
     if(kind==='plans'){
      if(typeof record.date!=='string'||!datePattern.test(record.date))return invalid('日期无效');
-     id=F.locationKey(point)+':'+record.date;
-     value={id,date:record.date,place:point,time:'06:00',note:'',snapshot:schema.snapshot(record.snapshot)};
+     if(record.entryId!==undefined&&!/^trip-[a-z0-9-]{8,80}$/.test(record.entryId))return invalid('出钓编号无效');
+     id=record.entryId||F.locationKey(point)+':'+record.date;
+     value={id,date:record.date,place:point,time:'06:00',note:'',snapshot:schema.snapshot(record.snapshot),weather:schema.weather(record.weather)};
+     if(record.entryId){
+      if(!timePattern.test(record.time||''))return invalid('时间无效');
+      const review=schema.review(record.review);if(!review)return invalid('出钓记录不完整');
+      const fish=require('./lib/fish-profiles').find(p=>p.id===review.targetId);if(fish&&fish.habitat!==point.type)return invalid('目标鱼与水域类型不匹配');
+      value.time=record.time;value.review={...review,completedAt:new Date().toISOString()};
+     }
     }else{
      id=record.id;
      value={...point,id};
@@ -68,7 +75,7 @@ function createRecords(db){
     const existing=await table.where({_id:key,owner,kind}).limit(1).get();
     if(!existing.data.length)return invalid('计划已移除，请刷新');
     const fish=require('./lib/fish-profiles').find(p=>p.id===review.targetId);
-    if(fish.habitat!==existing.data[0].record.place.type)return invalid('目标鱼与水域类型不匹配');
+    if(fish&&fish.habitat!==existing.data[0].record.place.type)return invalid('目标鱼与水域类型不匹配');
     review.completedAt=new Date().toISOString();
     await table.where({_id:key,owner,kind}).update({data:{'record.review':review}});
     return {ok:true,review};

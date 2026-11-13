@@ -5,9 +5,8 @@
 <input class="input" value="{{name}}" data-field="name" bindinput="input" placeholder="钓点名称" maxlength="60"/>
 <picker range="{{types}}" value="{{typeIndex}}" bindchange="type"><view class="picker">{{types[typeIndex]}}</view></picker>
 <view class="label">水域形态（用于记录，暂不单独加减分）</view><picker range="{{waters}}" value="{{waterIndex}}" bindchange="water"><view class="picker">{{waters[waterIndex]}}</view></picker>
-<input class="input" value="{{lat}}" data-field="lat" bindinput="input" placeholder="WGS84纬度"/>
-<input class="input" value="{{lng}}" data-field="lng" bindinput="input" placeholder="WGS84经度"/>
+<view class="label">钓点位置</view><button bindtap="locations">{{location?location.name:'搜索地点或使用当前位置'}} ↗</button><view class="sub">自由选择省市、区县、乡镇，或使用手机定位。无需填写经纬度。</view>
 <view class="label">这里实际钓到或核实过的鱼（可多选）</view><view class="sub">不确定可留空。使用该钓点后，推荐优先从已勾选鱼种中比较。</view>
 <checkbox-group bindchange="fish"><label class="species-option" wx:for="{{fishOptions}}" wx:key="id"><checkbox color="#c5f765" value="{{item.id}}" checked="{{item.checked}}"/>{{item.name}}</label></checkbox-group>
-<button class="primary" disabled="{{busy || loadError}}" bindtap="save">{{editingId?'更新钓点':'保存钓点'}}</button><button wx:if="{{editingId}}" bindtap="cancel">取消编辑</button></view>
-<view wx:for="{{items}}" wx:key="id" class="card"><view>{{item.name}}</view><view class="sub">{{item.lat}}, {{item.lng}} · {{item.species.length||0}}种已确认 · 未核实开放情况</view><view class="row"><button bindtap="use" data-index="{{index}}">用于推荐</button><button bindtap="editPoint" data-index="{{index}}" disabled="{{busy}}">编辑</button><button disabled="{{busy}}" bindtap="remove" data-index="{{index}}">删除</button></view></view></view>
+<view class="label">添加其他鱼种</view><textarea class="input" value="{{customSpeciesText}}" data-field="customSpeciesText" bindinput="input" maxlength="800" placeholder="填写鱼名，多种用逗号分开，例如：白条、黄颡鱼"/><view class="sub">自填鱼种会保存到钓点；未建立规则的鱼种暂不计算指数。</view><button class="primary" disabled="{{busy || loadError}}" bindtap="save">{{editingId?'更新钓点':'保存钓点'}}</button><button wx:if="{{editingId}}" bindtap="cancel">取消编辑</button></view>
+<view wx:for="{{items}}" wx:key="id" class="card"><view>{{item.name}}</view><view class="sub">{{item.species.length||0}}种库内鱼种 · 自填：{{item.customSpecies.length?item.customSpecies:"暂无"}} · 未核实开放情况</view><view class="row"><button bindtap="use" data-index="{{index}}">用于推荐</button><button bindtap="editPoint" data-index="{{index}}" disabled="{{busy}}">编辑</button><button disabled="{{busy}}" bindtap="remove" data-index="{{index}}">删除</button></view></view></view>

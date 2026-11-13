@@ -1,17 +1,17 @@
 const S=require('../../lib/state');
 const A=require('../../lib/account');
 const D=require('../../lib/decision'),schema=require('../../lib/record-schema'),profiles=require('../../lib/fish-profiles');
-const contacts=['未确认鱼口','有口','无口（空军也请记录）'],contactKeys=['unknown','yes','no'];
+const hooks=['未选择','有中鱼','未中鱼'],contacts=['未确认鱼口','有口','无口（空军也请记录）'],contactKeys=['unknown','yes','no'];
 function decorate(plans){return plans.map(p=>{
  const choices=profiles.filter(f=>f.domestic&&f.habitat===p.place.type);
  const review=p.review||{};
  return {...p,reviewOpen:false,reviewChoices:choices.map(f=>f.id),reviewNames:['请选择目标鱼',...choices.map(f=>f.name)],
- reviewDraft:{targetIndex:review.targetId?choices.findIndex(f=>f.id===review.targetId)+1:0,minutes:review.minutes||'',contactIndex:Math.max(0,contactKeys.indexOf(review.contact)),caught:review.caught===undefined?'':String(review.caught),bait:review.bait||'',note:review.note||''}};
+ reviewDraft:{hookIndex:review.hooked||review.caught>0?1:review.contact?2:0,targetName:review.targetName||'',fishType:review.fishType||'',targetIndex:review.targetId?choices.findIndex(f=>f.id===review.targetId)+1:0,minutes:review.minutes||'',contactIndex:Math.max(0,contactKeys.indexOf(review.contact)),caught:review.caught===undefined||review.caught===null?'':String(review.caught),bait:review.bait||'',note:review.note||''}};
 });}
 
 
 Page({
- data:{contacts,stats:D.stats([]),plans:[],signedIn:false,busy:false,loadError:'',profile:null,profileReady:false,profileError:'',avatarDraft:'',nicknameDraft:''},
+ data:{contacts,hooks,stats:D.stats([]),plans:[],signedIn:false,busy:false,loadError:'',profile:null,profileReady:false,profileError:'',avatarDraft:'',nicknameDraft:''},
  setPlans(plans){this.setData({plans:decorate(plans),stats:D.stats(plans)});},
  onShow(){return this.refresh();},
  async refresh(){
@@ -80,12 +80,12 @@ Page({
   });
  },
  toggleReview(e){const id=e.currentTarget.dataset.id;this.setData({plans:this.data.plans.map(p=>p.id===id?{...p,reviewOpen:!p.reviewOpen}:p)});},
- reviewInput(e){const {id,field}=e.currentTarget.dataset;if(!['targetIndex','minutes','contactIndex','caught','bait','note'].includes(field))return;this.setData({plans:this.data.plans.map(p=>p.id===id?{...p,reviewDraft:{...p.reviewDraft,[field]:e.detail.value}}:p)});},
+ reviewInput(e){const {id,field}=e.currentTarget.dataset;if(!['targetName','fishType','targetIndex','hookIndex','minutes','contactIndex','caught','bait','note'].includes(field))return;this.setData({plans:this.data.plans.map(p=>p.id===id?{...p,reviewDraft:{...p.reviewDraft,[field]:e.detail.value,...(field==='targetIndex'?{targetName:''}:{})}}:p)});},
  saveReview(e){
   const id=e.currentTarget.dataset.id,p=this.data.plans.find(p=>p.id===id);if(!p)return;
   const d=p.reviewDraft;
-  const value=schema.review({targetId:p.reviewChoices[Number(d.targetIndex)-1],minutes:String(d.minutes).trim()?Number(d.minutes):NaN,contact:contactKeys[Number(d.contactIndex)],caught:String(d.caught).trim()?Number(d.caught):NaN,bait:d.bait,note:d.note});
-  if(!value)return wx.showToast({title:'请填目标鱼、时长、鱼口、尾数及拟饵；中鱼应选有口',icon:'none'});
+  const value=schema.review({targetName:d.targetName,fishType:d.fishType,targetId:p.reviewChoices[Number(d.targetIndex)-1],minutes:String(d.minutes).trim()?Number(d.minutes):NaN,contact:contactKeys[Number(d.contactIndex)],hooked:Number(d.hookIndex)>0?Number(d.hookIndex)===1:Number(d.caught)>0,caught:String(d.caught).trim()?Number(d.caught):Number(d.hookIndex)===1?null:Number(d.hookIndex)===2?0:NaN,bait:d.bait,note:d.note});
+  if(!value)return wx.showToast({title:'请填目标鱼、时长、鱼口、中鱼及拟饵；中鱼应选有口',icon:'none'});
   return this.run(async()=>{
    let review={...value,completedAt:new Date().toISOString()};
    if(this.data.signedIn)review=(await A.request('plans','review',{id,record:value})).review;
@@ -110,6 +110,7 @@ Page({
   if(!p)return;
   S.choose(p.place);S.setDate(p.date);wx.switchTab({url:'/pages/home/index'});
  },
+ record(){wx.navigateTo({url:'/pages/record/index'});},
  points(){wx.navigateTo({url:'/pages/points/index'});},
  about(){wx.navigateTo({url:'/pages/about/index'});}
 });
