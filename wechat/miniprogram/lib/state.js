@@ -7,9 +7,19 @@ function dateKeys(now=Date.now()){const d=new Date(now+8*3600000);return Array.f
 const stored=read('wx-lc-place',null);
 const state={place:valid(stored)&&['fresh','sea'].includes(stored.type)?stored:{name:'杭州',lat:30.2741,lng:120.1551,type:'fresh'},date:dateKeys()[0],weather:null,marine:null,error:'',loading:false};
 let requestId=0;const cache=new Map();
+function serviceError(value){
+ const raw=value&&(value.message||value.errMsg)||'数据服务暂不可用';
+ const code=String(value&&(value.errCode||value.code)||'');
+ let message=String(raw);
+ if(code==='-501000'||/FUNCTION_NOT_FOUND/.test(message))message='找不到云函数 lurecastData，请确认部署到 cloud1-d8gyrpke95e13260f 环境';
+ else if(code==='-504003'||/FUNCTIONS_TIME_LIMIT_EXCEEDED/.test(message))message='云函数运行超时，请检查 lurecastData 的超时时间是否为30秒';
+ else if(code==='NOT_CONFIGURED')message='天气服务未启用：请在 lurecastData 配置环境变量 ENABLE_PUBLIC_WEATHER=true 后重试';
+ const error=new Error(message.slice(0,900)+(code&&!message.includes(code)?'（'+code+'）':''));
+ error.code=code;return error;
+}
 function call(action,params){
  if(!getApp().globalData.cloudReady)return Promise.reject(Error('尚未配置云开发环境，注册小程序后填写AppID与环境ID并部署云函数'));
- let timer;return Promise.race([wx.cloud.callFunction({name:config.functionName,data:{action,...params}}).then(r=>{if(!r.result||r.result.error)throw Error(r.result&&r.result.error&&r.result.error.message||'数据服务暂不可用');return r.result;}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('数据请求超时，请稍后刷新')),20000);})]).finally(()=>clearTimeout(timer));
+ let timer;return Promise.race([wx.cloud.callFunction({name:config.functionName,data:{action,...params}}).then(r=>{if(!r.result||r.result.error)throw serviceError(r.result&&r.result.error);return r.result;}),new Promise((_,reject)=>{timer=setTimeout(()=>reject(Error('数据请求超时，请稍后刷新')),20000);})]).finally(()=>clearTimeout(timer));
 }
 async function load(force=false){
  const id=++requestId,p={...state.place},k=F.locationKey(p)+':'+p.type,cached=cache.get(k);
@@ -20,7 +30,7 @@ async function load(force=false){
   state.weather=F.normalizeWeather(result.weather,result.retrievedAt);
   if(p.type==='sea'&&result.marine){try{state.marine=F.normalizeMarine(result.marine,p,result.retrievedAt);}catch(_){}}
   cache.set(k,{at:Date.now(),data:result});
- }catch(e){if(id===requestId)state.error=e.message||'天气暂不可用';}
+ }catch(e){if(id===requestId)state.error=serviceError(e).message;}
  finally{if(id===requestId)state.loading=false;}
  return state;
 }
@@ -30,4 +40,4 @@ function selectedDay(){return state.weather&&state.weather.days.find(d=>d.date==
 function fishHours(){const day=selectedDay(),mean=d=>d&&Number.isFinite(d.temperatureMin)&&Number.isFinite(d.temperatureMax)?(d.temperatureMin+d.temperatureMax)/2:null,avg=mean(day),prev=state.weather&&state.weather.days.find(d=>d.date===key(Date.parse(state.date+'T00:00:00+08:00')-86400000+8*3600000)),pm=mean(prev);return (state.weather&&state.weather.hours||[]).filter(h=>h.time.startsWith(state.date)).map(h=>({...h,habitat:state.place.type,sunrise:day&&day.sunrise,sunset:day&&day.sunset,dayMean:avg,dayChange:Number.isFinite(avg)&&Number.isFinite(pm)?avg-pm:null}));}
 function plans(){const x=read('wx-lc-plans',[]);return Array.isArray(x)?x.filter(p=>p&&typeof p.id==='string'&&valid(p.place)):[];}
 function addPlan(snapshot=null){const id=F.locationKey(state.place)+':'+state.date,items=plans();if(items.some(x=>x.id===id))return {ok:false,message:'该地点当天已有计划'};const ok=write('wx-lc-plans',[...items,{id,date:state.date,place:{...state.place},time:'06:00',note:'',snapshot}]);return {ok,message:ok?'已加入出钓计划':'保存失败'};}
-module.exports={state,read,write,valid,dateKeys,call,load,choose,setDate,selectedDay,fishHours,plans,addPlan};
+module.exports={state,read,write,valid,dateKeys,call,load,choose,setDate,selectedDay,fishHours,plans,addPlan,serviceError};

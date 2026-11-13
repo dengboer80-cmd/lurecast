@@ -5,3 +5,15 @@ test('China calendar rolls at UTC+8 midnight and keeps fifteen dates',()=>{const
 test('late old-location weather cannot replace a newer selected point',async()=>{const {S}=setup();const pending=[];wx.cloud={callFunction:()=>new Promise(resolve=>pending.push(resolve))};S.choose({name:'北京',lat:39.9,lng:116.4,type:'fresh'});const first=S.load();S.choose({name:'三亚',lat:18.25,lng:109.5,type:'sea'});assert.equal(S.state.weather,null);const second=S.load();pending[1]({result:{weather:raw(28),marine:null,retrievedAt:new Date().toISOString()}});await second;pending[0]({result:{weather:raw(8),retrievedAt:new Date().toISOString()}});await first;assert.equal(S.state.place.name,'三亚');assert.equal(S.state.weather.days[0].temperatureMin,28);});
 test('duplicate local plans are prevented and storage failure does not change persisted records',()=>{const {S,values}=setup();S.choose({name:'尤溪',lat:26.17,lng:118.19,type:'fresh'});assert.ok(S.addPlan().ok);assert.equal(S.addPlan().ok,false);assert.equal(S.plans().length,1);const before=JSON.stringify(values.get('wx-lc-plans'));wx.setStorageSync=()=>{throw Error('full');};S.state.date='2026-11-08';assert.equal(S.addPlan().ok,false);assert.equal(JSON.stringify(values.get('wx-lc-plans')),before);});
 test('unconfigured cloud shows a configuration error and no fabricated weather',async()=>{const {S}=setup();global.getApp=()=>({globalData:{cloudReady:false}});await S.load(true);assert.equal(S.state.weather,null);assert.match(S.state.error,/尚未配置云开发环境/);});
+
+test('native CloudBase errMsg and server configuration codes survive weather error display',async()=>{
+ const {S}=setup();
+ wx.cloud={callFunction:async()=>{throw {errCode:-504003,errMsg:'cloud.callFunction:fail FUNCTIONS_TIME_LIMIT_EXCEEDED'};}};
+ await S.load(true);assert.match(S.state.error,/30秒/);assert.match(S.state.error,/-504003/);assert.equal(S.state.weather,null);
+ wx.cloud.callFunction=async()=>({result:{error:{code:'NOT_CONFIGURED',message:'天气服务尚未启用'}}});
+ await S.load(true);assert.match(S.state.error,/ENABLE_PUBLIC_WEATHER=true/);
+ wx.cloud.callFunction=async()=>{throw {errMsg:'cloud.callFunction:fail module missing: record-schema'};};
+ await S.load(true);assert.match(S.state.error,/record-schema/);
+ wx.cloud.callFunction=async()=>({result:{error:{code:'SOURCE_HTTP_429',message:'额度受限'}}});
+ await S.load(true);assert.match(S.state.error,/SOURCE_HTTP_429/);
+});
