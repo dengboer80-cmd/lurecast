@@ -1,7 +1,72 @@
 const https=require('node:https');
 const F=require('./lib/free-data'),Places=require('./lib/nation-data');
 const allowed=new Set(['api.open-meteo.com','marine-api.open-meteo.com','geocoding-api.open-meteo.com']);
-function getJSON(url){return new Promise((resolve,reject)=>{const u=new URL(url);if(u.protocol!=='https:'||!allowed.has(u.hostname))return reject(Error('不允许的数据服务'));const req=https.get(u,{headers:{Accept:'application/json','Accept-Encoding':'identity'}},res=>{let text='';if(res.statusCode!==200){res.resume();reject(Error('数据源返回 '+res.statusCode));return;}res.setEncoding('utf8');res.on('data',chunk=>{text+=chunk;if(Buffer.byteLength(text)>1024*1024){req.destroy(Error('数据响应过大'));}});res.on('end',()=>{try{const d=JSON.parse(text);if(d.error)throw Error('数据源暂不可用');resolve(d);}catch(_){reject(Error('数据源格式无效或暂不可用'));}});res.on('error',reject);});req.setTimeout(8000,()=>req.destroy(Error('数据源超时')));req.on('error',reject);});}
+function sourceError(code,message){
+ const error=new Error(message);
+ error.code=code;
+ return error;
+}
+function getJSON(url){
+ return new Promise((resolve,reject)=>{
+  const target=new URL(url);
+  if(target.protocol!=='https:'||!allowed.has(target.hostname)){
+   reject(sourceError('SOURCE_FORBIDDEN','不允许的数据服务'));
+   return;
+  }
+  let settled=false;
+  const finish=(error,data)=>{
+   if(settled)return;
+   settled=true;
+   clearTimeout(deadline);
+   if(error)reject(error);else resolve(data);
+  };
+  const deadline=setTimeout(()=>{
+   req.destroy(sourceError('SOURCE_TIMEOUT','数据源超时'));
+  },7000);
+  const req=https.get(target,{headers:{Accept:'application/json','Accept-Encoding':'identity'}},res=>{
+   if(res.statusCode!==200){
+    res.resume();
+    finish(sourceError('SOURCE_HTTP_'+res.statusCode,'数据源返回 '+res.statusCode));
+    return;
+   }
+   let body='';
+   res.setEncoding('utf8');
+   res.on('data',chunk=>{
+    body+=chunk;
+    if(Buffer.byteLength(body)>1024*1024)req.destroy(sourceError('SOURCE_TOO_LARGE','数据响应过大'));
+   });
+   res.on('end',()=>{
+    try{
+     const data=JSON.parse(body);
+     if(data.error)throw Error('provider error');
+     finish(null,data);
+    }catch(_){finish(sourceError('SOURCE_FORMAT','数据源格式无效'));}
+   });
+   res.on('error',finish);
+   res.on('aborted',()=>finish(sourceError('ECONNRESET','数据源连接中断')));
+  });
+  req.on('error',finish);
+ });
+}
+const transient=new Set(['SOURCE_TIMEOUT','ETIMEDOUT','ECONNRESET','EAI_AGAIN']);
+async function fetchWeather(url,fetchJSON){
+ try{return await fetchJSON(url);}
+ catch(error){
+  if(!transient.has(error.code))throw error;
+  return fetchJSON(url);
+ }
+}
+function weatherFailure(error){
+ const code=error&&error.code||'SOURCE_UNKNOWN';
+ let message='天气数据源连接失败，请稍后重试';
+ if(['ENOTFOUND','EAI_AGAIN'].includes(code))message='天气域名解析失败，请检查云函数公网访问';
+ else if(['SOURCE_TIMEOUT','ETIMEDOUT','ECONNRESET','ECONNREFUSED','ENETUNREACH','EHOSTUNREACH'].includes(code))message='天气接口连接超时或中断，请检查云函数公网访问后重试';
+ else if(code==='SOURCE_HTTP_429')message='天气接口调用额度受限，请稍后重试';
+ else if(code==='SOURCE_HTTP_400')message='天气接口请求参数被拒绝，请联系开发者';
+ else if(code==='SOURCE_HTTP_401'||code==='SOURCE_HTTP_403')message='天气接口拒绝访问，请核对数据服务授权';
+ else if(code==='SOURCE_FORMAT')message='天气接口返回格式异常，请稍后重试';
+ return sourceError(code,message+'（'+String(code).replace(/[^A-Za-z0-9_]/g,'').slice(0,48)+'）');
+}
 function createService({context,fetchJSON=getJSON,now=Date.now,enabled=()=>process.env.ENABLE_PUBLIC_WEATHER==='true'}){
  const cache=new Map(),limits=new Map();
  async function cached(key,fn){const old=cache.get(key);if(old&&now()-old.at<600000)return old.value;const value=await fn();cache.set(key,{value,at:now()});if(cache.size>256)cache.delete(cache.keys().next().value);return value;}
@@ -25,12 +90,12 @@ function createService({context,fetchJSON=getJSON,now=Date.now,enabled=()=>proce
    // Use only a modest precision for forecast grids; no name or device location logs.
    p.lat=Math.round(p.lat*1000)/1000;p.lng=Math.round(p.lng*1000)/1000;
    return await cached('forecast:'+F.locationKey(p)+':'+event.habitat,async()=>{
-    const [weather,marine]=await Promise.allSettled([fetchJSON(F.weatherURL(p)),...(event.habitat==='sea'?[fetchJSON(F.marineURL(p))]:[])]);
-    if(weather.status!=='fulfilled')throw Error('天气数据源暂不可用，请稍后重试');
+    const [weather,marine]=await Promise.allSettled([fetchWeather(F.weatherURL(p),fetchJSON),...(event.habitat==='sea'?[fetchJSON(F.marineURL(p))]:[])]);
+    if(weather.status!=='fulfilled')throw weatherFailure(weather.reason);
     F.normalizeWeather(weather.value);
     return {weather:weather.value,marine:marine&&marine.status==='fulfilled'?marine.value:null,retrievedAt:new Date(now()).toISOString()};
    });
-  }catch(e){return {error:{code:'DATA_UNAVAILABLE',message:e.message||'数据暂不可用'}};}
+  }catch(e){return {error:{code:e.code||'DATA_UNAVAILABLE',message:e.message||'数据暂不可用'}};}
  };
 }
 module.exports={createService,getJSON};

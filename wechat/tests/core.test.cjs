@@ -8,3 +8,26 @@ test('freshwater skips marine; successful weather cache expires; marine failure 
 test('nationwide geocoder filters ambiguous province and provider failures have no fake results',async()=>{const service=createService({context:()=>({OPENID:'test'}),enabled:()=>true,fetchJSON:async url=>new URL(url).searchParams.get('countryCode')==='CN'?{results:[{name:'杭州',admin1:'浙江省',country_code:'CN',latitude:30.29,longitude:120.16},{name:'杭州',admin1:'四川省',country_code:'CN',latitude:30.06,longitude:102.19}]}:{results:[]}});const r=await service({action:'search',query:'杭州',province:'浙江'});assert.equal(r.results.length,1);assert.equal(r.results[0].lng,120.16);const failed=createService({context:()=>({OPENID:'x'}),enabled:()=>true,fetchJSON:async()=>{throw Error('down');}});assert.ok((await failed({action:'search',query:'杭州'})).error);assert.ok((await failed({action:'forecast',lat:30,lng:120,habitat:'fresh'})).error);});
 test('cloud in-process limit bounds repeated warm-instance calls',async()=>{const service=createService({context:()=>({OPENID:'test'}),enabled:()=>true,now:()=>0,fetchJSON:async()=>raw});for(let i=0;i<20;i++)assert.ok(!(await service({action:'forecast',lat:30,lng:120,habitat:'fresh'})).error);assert.equal((await service({action:'forecast',lat:30,lng:120,habitat:'fresh'})).error.code,'RATE_LIMIT');});
 test('offline official HKO data parses for every shipped station and year',()=>{const tables=require('../miniprogram/packages/tides/tide-years');for(const station of T.stations)for(const year of [2026,2027]){const data=tables[station.id][year],hours=T.hourly(data.hourlyCSV,year),events=T.extremes(data.extremesCSV,year);assert.equal(hours.length,8760);assert.ok(events.length>700);assert.ok(hours.every(h=>h.value===null||Number.isFinite(h.value)));}assert.ok(T.nearest({lat:30.2741,lng:120.1551})[0].distance>50);});
+
+test('weather transient connections retry once and provider errors remain diagnosable',async()=>{
+ const event={action:'forecast',lat:30.274,lng:120.155,habitat:'fresh'};
+ let calls=0;
+ const recovering=createService({context:()=>({OPENID:'x'}),enabled:()=>true,fetchJSON:async()=>{
+  calls++;
+  if(calls===1)throw Object.assign(Error('reset'),{code:'ECONNRESET'});
+  return raw;
+ }});
+ assert.ok((await recovering(event)).weather);
+ assert.equal(calls,2);
+ for(const code of ['ENOTFOUND','SOURCE_HTTP_400','SOURCE_HTTP_429','SOURCE_TIMEOUT']){
+  let attempts=0;
+  const failing=createService({context:()=>({OPENID:'x'}),enabled:()=>true,fetchJSON:async()=>{
+   attempts++;throw Object.assign(Error('upstream'),{code});
+  }});
+  const result=await failing(event);
+  assert.equal(result.error.code,code);
+  assert.ok(result.error.message.includes(code));
+  assert.equal(attempts,code==='SOURCE_TIMEOUT'?2:1);
+  assert.equal(result.weather,undefined);
+ }
+});
