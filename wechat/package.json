@@ -1,6 +1,6 @@
 {
   "name": "lurecast-wechat",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "prepare": "node scripts/prepare.cjs",

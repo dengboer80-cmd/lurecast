@@ -1,1 +1,13 @@
-<view class="page"><view class="title">{{signedIn?'我的钓点':'本机钓点'}}</view><view class="sub">仅记录你自行核实的地点；不表示允许垂钓。当前版本未接入公共钓场或地图服务。</view><view wx:if="{{loadError}}" class="sub">{{loadError}}<button bindtap="onShow">重新加载</button></view><view class="card"><input class="input" value="{{name}}" data-field="name" bindinput="input" placeholder="名称" maxlength="60"/><picker range="{{types}}" value="{{typeIndex}}" bindchange="type"><view class="picker">{{types[typeIndex]}}</view></picker><input class="input" value="{{lat}}" data-field="lat" bindinput="input" placeholder="WGS84纬度"/><input class="input" value="{{lng}}" data-field="lng" bindinput="input" placeholder="WGS84经度"/><button class="primary" disabled="{{busy || loadError}}" bindtap="save">保存钓点</button></view><view wx:for="{{items}}" wx:key="id" class="card"><view>{{item.name}}</view><view class="sub">{{item.lat}}, {{item.lng}} · 未核实开放情况</view><view class="row"><button bindtap="use" data-index="{{index}}">查询天气</button><button disabled="{{busy}}" bindtap="remove" data-index="{{index}}">删除</button></view></view></view>
+<view class="page"><view class="title">{{signedIn?'我的钓点':'本机钓点'}}</view>
+<view class="sub">钓点默认私密，不对其他用户展示。只记录你核实的地点与鱼种；开放情况和禁钓规定需自行确认。</view>
+<view wx:if="{{loadError}}" class="sub">{{loadError}}<button bindtap="onShow">重新加载</button></view>
+<view class="card"><view>{{editingId?'编辑钓点':'添加钓点'}}</view>
+<input class="input" value="{{name}}" data-field="name" bindinput="input" placeholder="钓点名称" maxlength="60"/>
+<picker range="{{types}}" value="{{typeIndex}}" bindchange="type"><view class="picker">{{types[typeIndex]}}</view></picker>
+<view class="label">水域形态（用于记录，暂不单独加减分）</view><picker range="{{waters}}" value="{{waterIndex}}" bindchange="water"><view class="picker">{{waters[waterIndex]}}</view></picker>
+<input class="input" value="{{lat}}" data-field="lat" bindinput="input" placeholder="WGS84纬度"/>
+<input class="input" value="{{lng}}" data-field="lng" bindinput="input" placeholder="WGS84经度"/>
+<view class="label">这里实际钓到或核实过的鱼（可多选）</view><view class="sub">不确定可留空。使用该钓点后，推荐优先从已勾选鱼种中比较。</view>
+<checkbox-group bindchange="fish"><label class="species-option" wx:for="{{fishOptions}}" wx:key="id"><checkbox color="#c5f765" value="{{item.id}}" checked="{{item.checked}}"/>{{item.name}}</label></checkbox-group>
+<button class="primary" disabled="{{busy || loadError}}" bindtap="save">{{editingId?'更新钓点':'保存钓点'}}</button><button wx:if="{{editingId}}" bindtap="cancel">取消编辑</button></view>
+<view wx:for="{{items}}" wx:key="id" class="card"><view>{{item.name}}</view><view class="sub">{{item.lat}}, {{item.lng}} · {{item.species.length||0}}种已确认 · 未核实开放情况</view><view class="row"><button bindtap="use" data-index="{{index}}">用于推荐</button><button bindtap="editPoint" data-index="{{index}}" disabled="{{busy}}">编辑</button><button disabled="{{busy}}" bindtap="remove" data-index="{{index}}">删除</button></view></view></view>

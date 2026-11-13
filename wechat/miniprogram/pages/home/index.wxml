@@ -12,7 +12,7 @@
 
   <view class="section-heading">
     <view>
-      <view class="eyebrow">LURECAST · 路亚天气</view>
+      <view class="eyebrow">LURECAST · 你的路亚出钓助手</view>
       <view class="section-title">下一竿，去哪里？</view>
     </view>
     <button class="text-button" bindtap="locations">换个地点 ↗</button>
@@ -45,7 +45,21 @@
     <image wx:if="{{recommendation}}" class="banner-fish" src="{{recommendation.image}}" mode="aspectFit"/>
   </view>
 
-  <view wx:if="{{recommendation}}" class="recommendation-note">按{{place.name}}天气排序的候选参考，请确认钓点实际鱼种。</view>
+  <view class="recommendation-note">{{recommendation?recommendation.basis:'先确认钓点鱼种，再结合天气选择。'}}</view>
+  <button class="text-button" bindtap="points">管理钓点与已知鱼种 ↗</button>
+  <view wx:if="{{recommendation}}" class="card decision-card">
+    <view class="section-title">这次怎么钓</view>
+    <view class="green sub">后续相对较好时段：{{recommendation.window}}</view>
+    <view class="sub">候选鱼 {{recommendation.name}} · {{recommendation.label}}</view>
+    <view class="label">推荐依据</view>
+    <view class="sub" wx:for="{{recommendation.favorable}}" wx:key="*this">＋ {{item}}</view>
+    <view class="sub" wx:for="{{recommendation.unfavorable}}" wx:key="*this">△ {{item}}</view>
+    <view class="label">水层与操作</view><view class="sub">{{recommendation.layer}}</view><view class="sub">{{recommendation.retrieve}}</view>
+    <view class="label">带什么饵</view><view class="sub">{{recommendation.bait}}</view>
+    <view class="label">没口怎么调整</view><view class="sub">{{recommendation.fallback}}</view>
+    <view class="label">信息不足</view><view class="sub" wx:for="{{recommendation.uncertainty}}" wx:key="*this">{{item}}</view>
+    <view class="sub">{{recommendation.qualification}}。规则尚未经过实钓校准；建议不代表安全评估或允许垂钓。</view>
+  </view>
 
   <view class="section-heading weather-heading">
     <view class="section-title">出钓气象</view>

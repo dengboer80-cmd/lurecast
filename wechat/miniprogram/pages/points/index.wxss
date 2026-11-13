@@ -1,0 +1,1 @@
+.species-option{display:inline-flex;align-items:center;width:50%;font-size:24rpx;min-height:80rpx;vertical-align:middle}.species-option checkbox{transform:scale(.8)}

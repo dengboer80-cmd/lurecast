@@ -17,3 +17,5 @@ for(const station of tides.stations)for(const year of [2026,2027]){
 console.log('Prepared shared weather rules, 97 fish profiles, and official offline tide years 2026–2027.');
 
 write(path.join(out,'packages/tides/tide-years.js'),'module.exports={'+tides.stations.map(s=>JSON.stringify(s.id)+':{'+[2026,2027].map(y=>JSON.stringify(y)+':require(\"./data/'+s.id+'-'+y+'.js\")').join(',')+'}').join(',')+'};\n');
+
+for(const name of ["record-schema.js","fish-profiles.js"])write(path.join(root,"wechat/cloudfunctions/lurecastData/lib",name),fs.readFileSync(path.join(out,"lib",name),"utf8"));

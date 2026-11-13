@@ -3,12 +3,12 @@ Page({data:{...V.home()},async onShow(){if(!S.dateKeys().includes(S.state.date))
  const fish=V.recommendedFish();
  if(fish)S.state.fishFocus={id:fish.id,hour:fish.hour};
  wx.switchTab({url:'/pages/fish/index'});
- },fish(){wx.switchTab({url:'/pages/fish/index'});},weather(){wx.switchTab({url:'/pages/weather/index'});},plans(){wx.switchTab({url:'/pages/plans/index'});},async addPlan(){
- if(!A.signedIn()){const r=S.addPlan();wx.showToast({title:r.message,icon:r.ok?'success':'none'});return;}
+ },points(){wx.navigateTo({url:'/pages/points/index?current=1'});},fish(){wx.switchTab({url:'/pages/fish/index'});},weather(){wx.switchTab({url:'/pages/weather/index'});},plans(){wx.switchTab({url:'/pages/plans/index'});},async addPlan(){
+ if(!A.signedIn()){const r=S.addPlan(require('../../lib/decision').snapshot(V.recommendedFish(),S.state.weather,S.state.date));wx.showToast({title:r.message,icon:r.ok?'success':'none'});return;}
  if(this.addingPlan)return;
  this.addingPlan=true;
  try{
-  await A.request('plans','add',{record:{place:S.state.place,date:S.state.date}});
+  await A.request('plans','add',{record:{place:S.state.place,date:S.state.date,snapshot:require('../../lib/decision').snapshot(V.recommendedFish(),S.state.weather,S.state.date)}});
   wx.showToast({title:'已保存到微信账号'});
  }catch(e){A.error(e);}
  finally{this.addingPlan=false;}

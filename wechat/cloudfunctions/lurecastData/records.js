@@ -5,13 +5,8 @@ const kinds=new Set(['plans','points']);
 const timePattern=/^(?:[01]\d|2[0-3]):[0-5]\d$/;
 const datePattern=/^\d{4}-\d{2}-\d{2}$/;
 
-function place(value){
- if(!value||typeof value.name!=='string'||!value.name.trim()||
- !Number.isFinite(value.lat)||Math.abs(value.lat)>90||
- !Number.isFinite(value.lng)||Math.abs(value.lng)>180||
- !['fresh','sea'].includes(value.type))return null;
- return {name:value.name.trim().slice(0,60),lat:value.lat,lng:value.lng,type:value.type};
-}
+const schema=require('./lib/record-schema');
+const place=schema.point;
 
 function createRecords(db){
  return async function records(event,owner){
@@ -38,7 +33,7 @@ function createRecords(db){
     if(kind==='plans'){
      if(typeof record.date!=='string'||!datePattern.test(record.date))return invalid('日期无效');
      id=F.locationKey(point)+':'+record.date;
-     value={id,date:record.date,place:point,time:'06:00',note:''};
+     value={id,date:record.date,place:point,time:'06:00',note:'',snapshot:schema.snapshot(record.snapshot)};
     }else{
      id=record.id;
      value={...point,id};
@@ -63,6 +58,20 @@ function createRecords(db){
      const existing=await table.where({_id:key,owner,kind}).limit(1).get();
      if(!existing.data.length)return invalid('计划已移除，请刷新');
     }
+   }else if(operation==='edit'&&kind==='points'){
+    const point=place(record);if(!point)return invalid('钓点或已知鱼种无效');
+    const result=await table.where({_id:key,owner,kind}).update({data:{record:{...point,id}}});
+    if(!result.stats.updated){const existing=await table.where({_id:key,owner,kind}).limit(1).get();if(!existing.data.length)return invalid('钓点已移除，请刷新');}
+   }else if(operation==='review'&&kind==='plans'){
+    const review=schema.review(record);
+    if(!review)return invalid('请填写目标鱼、1–1440分钟作钓时长、鱼口、尾数和拟饵；有中鱼时应选有口');
+    const existing=await table.where({_id:key,owner,kind}).limit(1).get();
+    if(!existing.data.length)return invalid('计划已移除，请刷新');
+    const fish=require('./lib/fish-profiles').find(p=>p.id===review.targetId);
+    if(fish.habitat!==existing.data[0].record.place.type)return invalid('目标鱼与水域类型不匹配');
+    review.completedAt=new Date().toISOString();
+    await table.where({_id:key,owner,kind}).update({data:{'record.review':review}});
+    return {ok:true,review};
    }else if(operation==='remove'){
     await table.where({_id:key,owner,kind}).remove();
    }else return invalid('不支持的记录操作');
