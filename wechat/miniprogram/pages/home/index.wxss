@@ -14,12 +14,12 @@
 .category-chip { display: inline-flex; align-items: center; gap: 10rpx; min-height: 66rpx; margin: 0; padding: 12rpx 22rpx; border-radius: 40rpx; font-size: 24rpx; border-color: #283128; background: #080b09; }
 .category-chip.selected { color: #c5f765; border-color: #38483d; background: #101813; }
 .chip-icon { font-size: 30rpx; line-height: 1; }
-.cast-banner { position: relative; overflow: hidden; border-radius: 38rpx; background: #080b09; border: 1rpx solid #283128; min-height: 300rpx; padding: 30rpx; }
-.banner-copy { position: relative; z-index: 1; width: 66%; }
+.cast-banner { position: relative; overflow: hidden; border-radius: 38rpx; background: #000; border: 1rpx solid #283128; min-height: 330rpx; padding: 30rpx; }
+.banner-copy { position: relative; z-index: 1; width: 58%; }
 .banner-kicker { font-size: 20rpx; color: #99aa9e; margin-bottom: 20rpx; }
 .banner-title { font-size: 38rpx; font-weight: 650; line-height: 1.5; max-width: 290rpx; }
 .banner-note { font-size: 22rpx; color: #99aa9e; line-height: 1.7; margin: 10rpx 0 20rpx; max-width: 290rpx; }
-.banner-fish { position: absolute; right: -36rpx; top: 76rpx; width: 310rpx; height: 210rpx; transform: rotate(-23deg); }
+.banner-fish { position: absolute; right: 12rpx; top: 66rpx; width: 270rpx; height: 210rpx; mix-blend-mode: screen; }
 .banner-link { display: inline-flex; align-items: center; gap: 18rpx; min-height: 60rpx; margin: 0; padding: 10rpx 20rpx; border: 0; background: #c5f765; color: #10180a; border-radius: 36rpx; font-size: 22rpx; }
 .weather-heading { margin-top: 36rpx; }
 .dates { margin: 20rpx 0 26rpx; }
@@ -38,3 +38,7 @@
 .source-note { color: #8c9c91; font-size: 19rpx; line-height: 1.8; margin-bottom: 8rpx; }
 .footer-link { text-align: left; min-height: 60rpx; padding: 12rpx 0; background: transparent; border: 0; color: #99aa9e; font-size: 21rpx; }
 .status-card .sub { overflow-wrap: anywhere; }
+
+.banner-score { color: #c5f765; font-size: 44rpx; font-weight: 650; margin-top: 10rpx; }
+.banner-score text { color: #99aa9e; font-size: 20rpx; font-weight: 400; margin-left: 10rpx; }
+.recommendation-note { color: #8c9c91; font-size: 20rpx; line-height: 1.7; margin-top: 12rpx; }

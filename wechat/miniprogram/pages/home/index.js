@@ -1,5 +1,9 @@
 const S=require('../../lib/state'),V=require('../../lib/view'),A=require('../../lib/account');
-Page({data:{...V.home()},async onShow(){if(!S.dateKeys().includes(S.state.date))S.setDate(S.dateKeys()[0]);this.setData(V.home());await this.refresh();},async refresh(){const task=S.load();this.setData(V.home());await task;this.setData(V.home());},async retry(){const task=S.load(true);this.setData(V.home());await task;this.setData(V.home());},selectDate(e){S.setDate(e.currentTarget.dataset.date);this.setData(V.home());},locations(){wx.navigateTo({url:'/pages/locations/index'});},tides(){wx.navigateTo({url:'/packages/tides/index'});},fish(){wx.switchTab({url:'/pages/fish/index'});},weather(){wx.switchTab({url:'/pages/weather/index'});},plans(){wx.switchTab({url:'/pages/plans/index'});},async addPlan(){
+Page({data:{...V.home()},async onShow(){if(!S.dateKeys().includes(S.state.date))S.setDate(S.dateKeys()[0]);this.setData(V.home());await this.refresh();},async refresh(){const task=S.load();this.setData(V.home());await task;this.setData(V.home());},async retry(){const task=S.load(true);this.setData(V.home());await task;this.setData(V.home());},selectDate(e){S.setDate(e.currentTarget.dataset.date);this.setData(V.home());},locations(){wx.navigateTo({url:'/pages/locations/index'});},tides(){wx.navigateTo({url:'/packages/tides/index'});},recommended(){
+ const fish=V.recommendedFish();
+ if(fish)S.state.fishFocus={id:fish.id,hour:fish.hour};
+ wx.switchTab({url:'/pages/fish/index'});
+ },fish(){wx.switchTab({url:'/pages/fish/index'});},weather(){wx.switchTab({url:'/pages/weather/index'});},plans(){wx.switchTab({url:'/pages/plans/index'});},async addPlan(){
  if(!A.signedIn()){const r=S.addPlan();wx.showToast({title:r.message,icon:r.ok?'success':'none'});return;}
  if(this.addingPlan)return;
  this.addingPlan=true;

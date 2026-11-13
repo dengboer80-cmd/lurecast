@@ -30,12 +30,22 @@
   <view class="cast-banner">
     <view class="banner-copy">
       <view class="banner-kicker">{{date}} · {{place.type==='sea'?'沿海':'淡水'}}</view>
-      <view class="banner-title">等一场好潮，<text class="green">去野。</text></view>
-      <view class="banner-note">根据当地天气，看看先钓哪种鱼。</view>
-      <button class="banner-link" bindtap="fish">查看鱼种指数 <text>↗</text></button>
+      <block wx:if="{{recommendation}}">
+        <view class="banner-title">优先试试<text class="green"> {{recommendation.name}}</text></view>
+        <view class="banner-score">{{recommendation.score}}<text>分 · {{recommendation.time}}</text></view>
+        <view class="banner-note">{{recommendation.bait}}</view>
+        <button class="banner-link" bindtap="recommended">查看作钓建议 ↗</button>
+      </block>
+      <block wx:else>
+        <view class="banner-title">{{loading?'正在判断鱼情':'暂不推荐鱼种'}}</view>
+        <view class="banner-note">{{loading?'根据所选地点天气计算中…':'当前时段数据不足或天气不宜，请查看鱼种指数。'}}</view>
+        <button class="banner-link" bindtap="fish">查看鱼种指数 ↗</button>
+      </block>
     </view>
-    <image class="banner-fish" src="/assets/fish/fish-0.jpg" mode="aspectFit"/>
+    <image wx:if="{{recommendation}}" class="banner-fish" src="{{recommendation.image}}" mode="aspectFit"/>
   </view>
+
+  <view wx:if="{{recommendation}}" class="recommendation-note">按{{place.name}}天气排序的候选参考，请确认钓点实际鱼种。</view>
 
   <view class="section-heading weather-heading">
     <view class="section-title">出钓气象</view>
